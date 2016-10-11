@@ -7,3 +7,18 @@ base:
   url_prefix:
   cdn_prefix:
   sso_url: http://127.0.0.1:20212
+  mq:
+    vhosts:
+      /:
+        connection:
+          hostname: localhost
+          user: guest
+          password: guest
+        queues:
+          - gomoku_compile
+          - gomoku_judge
+        publications:
+          compile:
+            queue: gomoku_compile
+          judge:
+            queue: gomoku_judge

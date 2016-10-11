@@ -7,6 +7,11 @@ logger:
 eventBus:
   path: eventBus
 
+mq:
+  path: mq
+  inject:
+    - logger
+
 mongodbConnection:
   path: mongodb.connection
   inject:

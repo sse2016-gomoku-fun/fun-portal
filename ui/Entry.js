@@ -40,12 +40,6 @@ async function load() {
       console.error(`Failed to load page ${page.name}\n${e.stack}`);
     }
   }
-  for (const section of $('.section')) {
-    const $section = $(section);
-    $section.addClass('visible');
-    await delay(150);
-    $section.trigger('vjLayout');
-  }
 }
 
 load();
