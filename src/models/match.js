@@ -3,10 +3,10 @@ import mongoose from 'mongoose';
 export default () => {
   const MatchSchema = new mongoose.Schema({
     status: Number,
-    u1: { type: mongoose.Schema.Types.ObjectId, ref: 'user' },
-    u2: { type: mongoose.Schema.Types.ObjectId, ref: 'user' },
-    u1Submission: { type: mongoose.Schema.Types.ObjectId, ref: 'submission' },
-    u2Submission: { type: mongoose.Schema.Types.ObjectId, ref: 'submission' },
+    u1: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    u2: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    u1Submission: { type: mongoose.Schema.Types.ObjectId, ref: 'Submission' },
+    u2Submission: { type: mongoose.Schema.Types.ObjectId, ref: 'Submission' },
     u1Score: Number,  // only exists after match is completed
     n2Score: Number,  // only exists after match is completed
     rounds: [{

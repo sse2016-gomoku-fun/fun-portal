@@ -1,11 +1,11 @@
+import express from 'express';
 import glob from 'glob';
-import Router from 'express-promise-router';
 import escapeHtml from 'escape-html';
 import errors from 'libs/errors';
 
 export default (app, logger) => {
 
-  const router = Router();
+  const router = express.Router();
   app.use(router);
 
   const handlers = glob
@@ -44,7 +44,7 @@ export default (app, logger) => {
   });
 
   // Handle Error outputs
-  app.use((err, req, res) => {
+  app.use((err, req, res, next) => {
     if (err.status === 500) {
       logger.error(err);
     }
@@ -59,7 +59,11 @@ export default (app, logger) => {
     if (req.xhr) {
       res.json(errObject);
     } else {
-      res.render('error', { error: errObject });
+      res.render('error', {
+        error: errObject,
+        nav_type: 'error',
+        page_title: err.name,
+      });
     }
   });
 

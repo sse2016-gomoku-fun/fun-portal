@@ -1,6 +1,7 @@
 import * as web from 'express-decorators';
 import utils from 'libs/utils';
 import errors from 'libs/errors';
+import permissions from 'libs/permissions';
 
 @web.controller('/submission')
 export default class Handler {
@@ -45,11 +46,21 @@ export default class Handler {
     res.redirect(utils.url('/submission'));
   }
 
-
-  @web.get('/all')
+  @web.get('/:id')
   @web.middleware(utils.checkLogin())
-  async getAllSubmissionAction(req, res) {
-
+  async getSubmissionDetailAction(req, res) {
+    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.params.id);
+    if (
+      String(sdoc.user) !== String(req.session.user._id)
+      && !req.session.user.hasPermission(permissions.PERM_VIEW_ALL_SUBMISSION)
+    ) {
+      throw new errors.PermissionError();
+    }
+    await sdoc.populate('user').execPopulate();
+    res.render('submission_detail', {
+      page_title: 'Submission Detail',
+      sdoc,
+    });
   }
 
 }

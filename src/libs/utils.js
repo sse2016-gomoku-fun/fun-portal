@@ -30,7 +30,7 @@ utils.static_url = (s) => {
 
 utils.checkLogin = () => (req, res, next) => {
   if (!req.session.user) {
-    throw new errors.PrivilegeError();
+    throw new errors.PermissionError();
   }
   next();
 };

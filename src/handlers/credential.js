@@ -20,7 +20,7 @@ export default class Handler {
         errors.error = e.message;
       }
     }
-    if (req.query.failure) {
+    if (req.query.failure !== undefined) {
       errors.error = 'Unable to login using Tongji account. Incorrect student ID or password.';
     }
     res.render('login', {

@@ -5,7 +5,7 @@ import errors from 'libs/errors';
 
 export default () => {
   const SubmissionSchema = new mongoose.Schema({
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'user' },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     code: String,
     executable: Buffer,
     status: String,
