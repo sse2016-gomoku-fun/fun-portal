@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
 import roles from 'libs/roles';
-import permissions from 'libs/permissions';
 import sso from 'libs/sso';
 
 export default () => {

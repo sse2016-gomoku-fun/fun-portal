@@ -63,4 +63,27 @@ export default class Handler {
     });
   }
 
+  @web.post('/api/startCompile')
+  @web.middleware(utils.sanitizeBody({
+    id: utils.checkNonEmpty(),
+    token: utils.checkNonEmpty(),
+  }))
+  @web.middleware(utils.checkAPI())
+  async apiStartCompile(req, res) {
+    const sdoc = await DI.models.Submission.judgeStartCompileAsync(req.body.id, req.body.token);
+    await sdoc.populate('user').execPopulate();
+    res.json(sdoc);
+  }
+
+  @web.post('/api/completeCompile')
+  @web.middleware(utils.sanitizeBody({
+    id: utils.checkNonEmpty(),
+    token: utils.checkNonEmpty(),
+  }))
+  @web.middleware(utils.checkAPI())
+  async apiCompleteCompile(req, res) {
+    res.json({});
+    //const sdoc = await DI.models.Submission.judgeCompleteCompileAsync(req.body.id, req.body.token);
+  }
+
 }

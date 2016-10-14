@@ -1,6 +1,5 @@
 import express from 'express';
 import glob from 'glob';
-import escapeHtml from 'escape-html';
 import errors from 'libs/errors';
 
 export default (app, logger) => {
@@ -53,10 +52,9 @@ export default (app, logger) => {
       err: true,
       status: err.status,
       msg: err.message,
-      msgHtml: err.messageHtml || escapeHtml(err.message),
       name: err.name,
     };
-    if (req.xhr) {
+    if (req.is('json')) {
       res.json(errObject);
     } else {
       res.render('error', {

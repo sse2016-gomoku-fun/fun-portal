@@ -47,14 +47,16 @@ export default (app) => {
     res.render = (pageName, parameters = {}) => {
       _render.call(res, pageName, {
         page_name: pageName,
+        ui_context: {
+          cdnPrefix: DI.config.cdnPrefix,
+          csrfToken: req.csrfToken ? req.csrfToken() : 'NA',
+        },
         ...parameters,
       });
     };
 
     res.locals.req = req;
     res.locals.config = DI.config;
-    res.locals.ui_context = res.locals.ui_context || {};
-    res.locals.ui_context.cdn_prefix = DI.config.cdn_prefix;
 
     next();
   });

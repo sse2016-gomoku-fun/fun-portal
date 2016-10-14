@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import validator from 'validator';
+import auth from 'basic-auth';
 import errors from 'libs/errors';
 
 const utils = {};
@@ -14,7 +15,7 @@ utils.substitute = (str, obj) => {
 };
 
 utils.url = (s, absolute = false, obj = null) => {
-  let url = `${DI.config.url_prefix}${s}`;
+  let url = `${DI.config.urlPrefix}${s}`;
   if (absolute) {
     url = `${DI.config.host}${url}`;
   }
@@ -25,7 +26,7 @@ utils.url = (s, absolute = false, obj = null) => {
 };
 
 utils.static_url = (s) => {
-  return `${DI.config.cdn_prefix}${s}`;
+  return `${DI.config.cdnPrefix}${s}`;
 };
 
 utils.checkLogin = () => (req, res, next) => {
@@ -43,6 +44,17 @@ utils.checkProfile = () => (req, res, next) => {
   if (req.session.user.profile.initial) {
     res.redirect(utils.url('/user/profile'));
     return;
+  }
+  next();
+};
+
+utils.checkAPI = () => (req, res, next) => {
+  const credentials = auth(req);
+  if (!credentials
+    || credentials.name !== DI.config.api.credential.username
+    || credentials.pass !== DI.config.api.credential.password
+  ) {
+    throw new errors.PermissionError();
   }
   next();
 };

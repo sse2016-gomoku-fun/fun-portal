@@ -38,6 +38,11 @@ webSession:
     - webServer
     - mongodbConnection
 
+webTemplate:
+  path: web.template
+  inject:
+    - webServer
+
 webSecurity:
   path: web.security
   inject:
@@ -45,11 +50,6 @@ webSecurity:
 
 webStatic:
   path: web.static
-  inject:
-    - webServer
-
-webTemplate:
-  path: web.template
   inject:
     - webServer
 

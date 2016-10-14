@@ -18,7 +18,7 @@ export default () => {
 
   SubmissionSchema.statics.LIMIT_SIZE_CODE = 1 * 1024 * 1024;
   SubmissionSchema.statics.LIMIT_SIZE_EXECUTABLE = 5 * 1024 * 1024;
-  SubmissionSchema.statics.LIMIT_MIN_INTERVAL = 24 * 60 * 60 * 1000;
+  SubmissionSchema.statics.LIMIT_MIN_INTERVAL = 1000;//24 * 60 * 60 * 1000;
 
   SubmissionSchema.statics.STATUS_PENDING = 'pending';
   SubmissionSchema.statics.STATUS_COMPILING = 'compiling';
@@ -131,6 +131,33 @@ export default () => {
       token: submission.taskToken,
     });
     return submission;
+  };
+
+  SubmissionSchema.statics.judgeStartCompileAsync = async function (sid, taskToken) {
+    const sdoc = await this.getSubmissionObjectByIdAsync(sid);
+    if (sdoc.taskToken !== taskToken) {
+      throw new errors.UserError('Task token does not match');
+    }
+    sdoc.status = this.STATUS_COMPILING;
+    await sdoc.save();
+    return sdoc;
+  };
+
+  SubmissionSchema.statics.judgeCompleteCompileAsync = async function (sid, taskToken, success, text, executable = null) {
+    if (!success && executable !== null) {
+      throw new errors.UserError('No executable should be supplied');
+    }
+    const sdoc = await this.getSubmissionObjectByIdAsync(sid);
+    if (sdoc.taskToken !== taskToken) {
+      throw new errors.UserError('Task token does not match');
+    }
+    sdoc.text = text;
+    sdoc.status = success ? this.STATUS_RUNNING : this.STATUS_COMPILE_ERROR;
+    await sdoc.save();
+    if (success) {
+      // TODO
+    }
+    return sdoc;
   };
 
   SubmissionSchema.index({ user: 1, createdAt: -1 });

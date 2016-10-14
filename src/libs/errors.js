@@ -1,5 +1,4 @@
 import errorFactory from 'dg-error-factory';
-import escapeHtml from 'escape-html';
 
 const errors = {
   PermissionError: errorFactory('PermissionError', function () {

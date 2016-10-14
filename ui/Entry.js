@@ -1,5 +1,5 @@
 // eslint-disable-next-line camelcase
-__webpack_public_path__ = UiContext.cdn_prefix;
+__webpack_public_path__ = UiContext.cdnPrefix;
 
 import 'jquery.transit';
 
