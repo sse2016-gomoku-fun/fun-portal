@@ -16,7 +16,6 @@ import './misc/structure.styl';
 import './misc/section.styl';
 
 import { PageLoader } from './misc/PageLoader';
-import delay from './utils/delay';
 
 const pageLoader = new PageLoader();
 

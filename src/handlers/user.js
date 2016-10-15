@@ -23,9 +23,9 @@ export default class Handler {
 
   @web.post('/profile')
   @web.middleware(utils.sanitizeBody({
-    realName: utils.checkNonEmpty(),
-    displayName: utils.checkNonEmpty(),
-    teacher: utils.checkNonEmpty(),
+    realName: utils.checkNonEmptyString(),
+    displayName: utils.checkNonEmptyString(),
+    teacher: utils.checkNonEmptyString(),
   }))
   @web.middleware(utils.checkLogin())
   async postUserProfileAction(req, res) {

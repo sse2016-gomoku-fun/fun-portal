@@ -16,7 +16,7 @@ export default (app, logger) => {
 
   // Fallback: Generate 404
   app.use((req, res, next) => {
-    const err = new errors.UserError('该页面不存在');
+    const err = new errors.UserError('Page Not Found');
     err.status = 404;
     next(err);
   });
@@ -26,7 +26,7 @@ export default (app, logger) => {
     if (err.code !== 'EBADCSRFTOKEN') {
       return next(err);
     }
-    err = new errors.UserError('CSRF Token 验证失败');
+    err = new errors.UserError('Incorrect CSRF Token. Please re-login and try again.');
     err.status = 403;
     next(err);
   });
@@ -37,7 +37,7 @@ export default (app, logger) => {
       err.status = 500;
     }
     if (err.status === 500) {
-      err.message = `服务端错误：${err.message}`;
+      err.message = `Server internal error: ${err.message}`;
     }
     next(err);
   });
@@ -54,7 +54,7 @@ export default (app, logger) => {
       msg: err.message,
       name: err.name,
     };
-    if (req.is('json')) {
+    if (req.is('json') || req.xhr) {
       res.json(errObject);
     } else {
       res.render('error', {

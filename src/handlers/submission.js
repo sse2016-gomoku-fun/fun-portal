@@ -1,7 +1,22 @@
 import * as web from 'express-decorators';
+import multer from 'multer';
+import fsp from 'fs-promise';
+import _ from 'lodash';
 import utils from 'libs/utils';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
+
+const upload = multer({
+  storage: multer.diskStorage({}),
+  limits: {
+    fieldSize: Math.max(
+      DI.models.Submission.LIMIT_SIZE_CODE,
+      DI.models.Submission.LIMIT_SIZE_EXECUTABLE,
+      DI.models.Submission.LIMIT_SIZE_TEXT
+    ) * 2,
+    fileSize: DI.models.Submission.LIMIT_SIZE_EXECUTABLE * 2,
+  },
+});
 
 @web.controller('/submission')
 export default class Handler {
@@ -34,7 +49,7 @@ export default class Handler {
 
   @web.post('/create')
   @web.middleware(utils.sanitizeBody({
-    code: utils.checkNonEmpty(),
+    code: utils.checkNonEmptyString(),
   }))
   @web.middleware(utils.checkProfile())
   @web.middleware(utils.checkLogin())
@@ -63,27 +78,53 @@ export default class Handler {
     });
   }
 
+  @web.get('/api/limits')
+  @web.middleware(utils.checkAPI())
+  async apiGetLimitations(req, res) {
+    res.json(_.pick(DI.models.Submission, [
+      'LIMIT_SIZE_EXECUTABLE',
+      'LIMIT_SIZE_TEXT',
+    ]));
+  }
+
   @web.post('/api/startCompile')
   @web.middleware(utils.sanitizeBody({
-    id: utils.checkNonEmpty(),
-    token: utils.checkNonEmpty(),
+    id: utils.checkNonEmptyString(),
+    token: utils.checkNonEmptyString(),
   }))
   @web.middleware(utils.checkAPI())
   async apiStartCompile(req, res) {
-    const sdoc = await DI.models.Submission.judgeStartCompileAsync(req.body.id, req.body.token);
+    const sdoc = await DI.models.Submission.judgeStartCompileAsync(req.data.id, req.data.token);
     await sdoc.populate('user').execPopulate();
     res.json(sdoc);
   }
 
   @web.post('/api/completeCompile')
   @web.middleware(utils.sanitizeBody({
-    id: utils.checkNonEmpty(),
-    token: utils.checkNonEmpty(),
+    id: utils.checkNonEmptyString(),
+    token: utils.checkNonEmptyString(),
+    text: utils.checkString(),
+    success: utils.checkBool(),
   }))
+  @web.middleware(upload.single('binary'))
   @web.middleware(utils.checkAPI())
-  async apiCompleteCompile(req, res) {
+  async apiCompileSuccess(req, res) {
+    let buffer = null;
+    if (req.data.success && req.file) {
+      buffer = await fsp.readFile(req.file.path);
+      try {
+        await fsp.remove(req.file.path);
+      } catch (ignore) {
+      }
+    }
+    await DI.models.Submission.judgeCompleteCompileAsync(
+      req.data.id,
+      req.data.token,
+      req.data.success,
+      req.data.text,
+      buffer,
+    );
     res.json({});
-    //const sdoc = await DI.models.Submission.judgeCompleteCompileAsync(req.body.id, req.body.token);
   }
 
 }

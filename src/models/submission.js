@@ -17,8 +17,9 @@ export default () => {
   });
 
   SubmissionSchema.statics.LIMIT_SIZE_CODE = 1 * 1024 * 1024;
-  SubmissionSchema.statics.LIMIT_SIZE_EXECUTABLE = 5 * 1024 * 1024;
-  SubmissionSchema.statics.LIMIT_MIN_INTERVAL = 1000;//24 * 60 * 60 * 1000;
+  SubmissionSchema.statics.LIMIT_SIZE_EXECUTABLE = 1 * 1024 * 1024;
+  SubmissionSchema.statics.LIMIT_SIZE_TEXT = 100 * 1024;
+  SubmissionSchema.statics.LIMIT_MIN_INTERVAL = 1000; //24 * 60 * 60 * 1000;
 
   SubmissionSchema.statics.STATUS_PENDING = 'pending';
   SubmissionSchema.statics.STATUS_COMPILING = 'compiling';
@@ -38,7 +39,7 @@ export default () => {
    * Get the submission object by userId
    * @return {User} Mongoose submission object
    */
-  SubmissionSchema.statics.getSubmissionObjectByIdAsync = async function (id, projection = {}, throwWhenNotFound = true) {
+  SubmissionSchema.statics.getSubmissionObjectByIdAsync = async function (id, projection = { executable: 0 }, throwWhenNotFound = true) {
     if (!objectId.isValid(id)) {
       if (throwWhenNotFound) {
         throw new errors.UserError('Submission not found');
@@ -133,6 +134,14 @@ export default () => {
     return submission;
   };
 
+  /**
+   * Mark a submission as compiling and return the submission if the given taskToken
+   * matches the submission
+   *
+   * @param  {MongoId} sid
+   * @param  {String} taskToken
+   * @return {Submission}
+   */
   SubmissionSchema.statics.judgeStartCompileAsync = async function (sid, taskToken) {
     const sdoc = await this.getSubmissionObjectByIdAsync(sid);
     if (sdoc.taskToken !== taskToken) {
@@ -140,11 +149,24 @@ export default () => {
     }
     sdoc.status = this.STATUS_COMPILING;
     await sdoc.save();
+    // TODO: eventbus
     return sdoc;
   };
 
-  SubmissionSchema.statics.judgeCompleteCompileAsync = async function (sid, taskToken, success, text, executable = null) {
-    if (!success && executable !== null) {
+  /**
+   * Mark a submission as Compile Error or Running and return the submission if the
+   * given taskToken matches the submission. For success compiling, it will prepare
+   * matches and push match task to the queue.
+   *
+   * @param  {MongoId} sid
+   * @param  {String} taskToken
+   * @param  {Boolean} success
+   * @param  {String} text
+   * @param  {Buffer} exeBuffer
+   * @return {Submisison}
+   */
+  SubmissionSchema.statics.judgeCompleteCompileAsync = async function (sid, taskToken, success, text, exeBuffer = null) {
+    if (!success && exeBuffer !== null) {
       throw new errors.UserError('No executable should be supplied');
     }
     const sdoc = await this.getSubmissionObjectByIdAsync(sid);
@@ -153,10 +175,14 @@ export default () => {
     }
     sdoc.text = text;
     sdoc.status = success ? this.STATUS_RUNNING : this.STATUS_COMPILE_ERROR;
-    await sdoc.save();
-    if (success) {
-      // TODO
+    if (success && exeBuffer !== null) {
+      sdoc.executable = exeBuffer;
     }
+    await sdoc.save();
+    // TODO: eventbus
+    /*if (success) {
+      // TODO
+    }*/
     return sdoc;
   };
 

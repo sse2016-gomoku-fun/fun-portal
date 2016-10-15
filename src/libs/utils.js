@@ -66,7 +66,7 @@ const sanitize = (source, patterns) => {
       throw new errors.ValidationError(`Missing required parameter '${key}'`);
     }
     try {
-      ret[key] = patterns[key](String(source[key]));
+      ret[key] = patterns[key](source[key]);
     } catch (err) {
       throw new errors.ValidationError(`Parameter '${key}' is expected to be a(n) ${err.message}`);
     }
@@ -90,18 +90,44 @@ utils.sanitizeBody = (patterns) => sanitizeExpress('body', patterns);
 
 utils.sanitizeQuery = (patterns) => sanitizeExpress('query', patterns);
 
-utils.checkInt = () => (str) => {
+utils.checkInt = () => (any) => {
+  if (typeof any === 'number') {
+    return Math.floor(any);
+  }
+  const str = String(any);
   if (!validator.isInt(str)) {
     throw new Error('integer number');
   }
   return validator.toInt(str);
 };
 
-utils.checkNonEmpty = () => (str) => {
-  if (str.trim().length === 0) {
-    throw new Error('non empty string');
+utils.checkString = () => (any) => {
+  if (typeof any === 'string') {
+    return any;
   }
-  return str.trim();
+  throw new Error('string');
+};
+
+utils.checkNonEmptyString = () => (any) => {
+  if (typeof any === 'string') {
+    if (any.trim().length === 0) {
+      throw new Error('non empty string');
+    }
+    return any.trim();
+  }
+  throw new Error('non empty string');
+};
+
+utils.checkBool = () => (any) => {
+  if (typeof any === 'boolean') {
+    return any;
+  }
+  if (any === 'true') {
+    return true;
+  } else if (any === 'false') {
+    return false;
+  }
+  throw new Error('boolean');
 };
 
 export default utils;
