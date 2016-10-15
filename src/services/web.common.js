@@ -10,7 +10,7 @@ export default (app) => {
   }));
   app.use(bodyParser.urlencoded({
     limit: '2mb',
-    extended: false
+    extended: false,
   }));
   app.use(cookieParser());
   app.use(methodOverride());

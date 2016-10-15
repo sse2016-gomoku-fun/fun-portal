@@ -39,6 +39,7 @@ export default () => {
 
   /**
    * Get the submission object by userId
+   *
    * @return {User} Mongoose submission object
    */
   SubmissionSchema.statics.getSubmissionObjectByIdAsync = async function (id, projection = { executable: 0 }, throwWhenNotFound = true) {
@@ -58,6 +59,7 @@ export default () => {
 
   /**
    * Get all submissions of a user
+   *
    * @return {[Submission]}
    */
   SubmissionSchema.statics.getUserSubmissionsAsync = async function (uid, limit = null) {
@@ -73,6 +75,7 @@ export default () => {
 
   /**
    * Check whether a user is allowed to submit new code
+   *
    * @return {Boolean}
    */
   SubmissionSchema.statics.isUserAllowedToSubmitAsync = async function (uid) {
@@ -91,7 +94,8 @@ export default () => {
   };
 
   /**
-   * Submit new code
+   * Submit new code and create tasks
+   *
    * @return {Submission}
    */
   SubmissionSchema.statics.createSubmissionAsync = async function (uid, code) {
@@ -114,6 +118,7 @@ export default () => {
 
   /**
    * Reset status of a submission and push it to the task queue
+   *
    * @param  {MongoId|Submission} sidOrSubmission Submission id or Submission object
    * @return {Submission} The new submission object
    */
