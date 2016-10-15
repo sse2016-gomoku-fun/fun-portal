@@ -32,6 +32,11 @@ webCommon:
   inject:
     - webServer
 
+webStatic:
+  path: web.static
+  inject:
+    - webServer
+
 webSession:
   path: web.session
   inject:
@@ -45,11 +50,6 @@ webTemplate:
 
 webSecurity:
   path: web.security
-  inject:
-    - webServer
-
-webStatic:
-  path: web.static
   inject:
     - webServer
 

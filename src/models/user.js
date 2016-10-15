@@ -46,7 +46,7 @@ export default () => {
    */
   UserSchema.statics.getUserObjectByUserNameAsync = async function (userName, throwWhenNotFound = true) {
     const userNameNormalized = this.normalizeUserName(userName);
-    const user = await this.findOne({ userName_std: userNameNormalized }).exec();
+    const user = await this.findOne({ userName_std: userNameNormalized });
     if (user === null && throwWhenNotFound) {
       throw new errors.UserError('User not found');
     }
@@ -65,7 +65,7 @@ export default () => {
         return null;
       }
     }
-    const user = await this.findOne({ _id: id }).exec();
+    const user = await this.findOne({ _id: id });
     if (user === null && throwWhenNotFound) {
       throw new errors.UserError('User not found');
     }

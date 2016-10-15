@@ -11,6 +11,11 @@ base:
     credential:
       username: foo
       password: bar
+  match:
+    initialMaps:
+      - 1
+      - 2
+      - 3
   mq:
     vhosts:
       /:

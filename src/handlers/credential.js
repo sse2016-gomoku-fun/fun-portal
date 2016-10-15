@@ -1,5 +1,6 @@
 import * as web from 'express-decorators';
 import utils from 'libs/utils';
+import credential from 'libs/credential';
 
 const DIRECTORY_COOKIE = 'iPlanetDirectoryPro';
 
@@ -13,7 +14,7 @@ export default class Handler {
     if (directory !== undefined) {
       try {
         const user = await DI.models.User.authenticateSsoAsync(directory);
-        req.session.user = user;
+        await credential.setCredential(req, user._id);
         res.redirect(utils.url('/'));
         return;
       } catch (e) {

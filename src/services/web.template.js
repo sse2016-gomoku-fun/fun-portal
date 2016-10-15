@@ -38,6 +38,8 @@ export default (app) => {
 
   njenv.addGlobal('static_url', utils.static_url);
   njenv.addGlobal('url', utils.url);
+
+  // https://github.com/mozilla/nunjucks/issues/884
   njenv.addGlobal('DI', path => _.get(DI, path));
 
   // Expose necessary object

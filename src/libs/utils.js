@@ -30,18 +30,18 @@ utils.static_url = (s) => {
 };
 
 utils.checkLogin = () => (req, res, next) => {
-  if (!req.session.user) {
+  if (!req.credential) {
     throw new errors.PermissionError();
   }
   next();
 };
 
 utils.checkProfile = () => (req, res, next) => {
-  if (!req.session.user) {
+  if (!req.credential) {
     next();
     return;
   }
-  if (req.session.user.profile.initial) {
+  if (req.credential.profile.initial) {
     res.redirect(utils.url('/user/profile'));
     return;
   }

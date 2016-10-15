@@ -30,7 +30,7 @@ export default class Handler {
   @web.get('/')
   @web.middleware(utils.checkLogin())
   async getSubmissionAction(req, res) {
-    const sdocs = await DI.models.Submission.getUserSubmissionsAsync(req.session.user._id);
+    const sdocs = await DI.models.Submission.getUserSubmissionsAsync(req.credential._id);
     res.render('submission_main', {
       page_title: 'My Submissions',
       sdocs,
@@ -43,7 +43,7 @@ export default class Handler {
   async getSubmissionCreateAction(req, res) {
     res.render('submission_create', {
       page_title: 'Submit My Brain',
-      canSubmit: await DI.models.Submission.isUserAllowedToSubmitAsync(req.session.user._id),
+      canSubmit: await DI.models.Submission.isUserAllowedToSubmitAsync(req.credential._id),
     });
   }
 
@@ -55,7 +55,7 @@ export default class Handler {
   @web.middleware(utils.checkLogin())
   async postSubmissionCreateAction(req, res) {
     await DI.models.Submission.createSubmissionAsync(
-      req.session.user._id,
+      req.credential._id,
       req.data.code
     );
     res.redirect(utils.url('/submission'));
@@ -66,8 +66,8 @@ export default class Handler {
   async getSubmissionDetailAction(req, res) {
     const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.params.id);
     if (
-      String(sdoc.user) !== String(req.session.user._id)
-      && !req.session.user.hasPermission(permissions.PERM_VIEW_ALL_SUBMISSION)
+      !sdoc.user.equals(req.credential._id)
+      && !req.credential.hasPermission(permissions.PERM_VIEW_ALL_SUBMISSION)
     ) {
       throw new errors.PermissionError();
     }
