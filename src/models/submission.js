@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import uuid from 'uuid';
 import mongoose from 'mongoose';
 import objectId from 'libs/objectId';
@@ -140,7 +141,13 @@ export default () => {
     return submission;
   };
 
-  SubmissionSchema.statics.getLatestSubmissionsByUserAsync = async function (onlyEffective = true) {
+  /**
+   * Get each users' last effective or running submission
+   *
+   * @param  {Boolean} onlyEffective
+   * @return {[{_id, submissionId}]}
+   */
+  SubmissionSchema.statics.getLastSubmissionsByUserAsync = async function (onlyEffective = true) {
     let statusMatchExp;
     if (onlyEffective) {
       statusMatchExp = this.STATUS_EFFECTIVE;
@@ -150,8 +157,9 @@ export default () => {
     return await this.aggregate([
       { $match: { status: statusMatchExp } },
       { $sort: { createdAt: -1 } },
-      { $group: { _id: '$user', submission: { $last: '$_id' } } },
-    ]);
+      { $project: { user: 1, createdAt : 1, status: 1 } },
+      { $group: { _id: '$user', submissionId: { $first: '$_id' } } },
+    ]).allowDiskUse(true).exec();
   };
 
   /**
@@ -224,15 +232,33 @@ export default () => {
     return sdoc;
   };
 
+  /**
+   * Create related matches for specified submission
+   */
   SubmissionSchema.statics._createMatchAsync = async function (submission) {
     const compilingSubmissions = await this.find({ status: this.STATUS_COMPILING }).count();
-    if (compilingSubmissions !== 1) {
-      const error = new Error(`Expect compilingSubmissions is 1, got ${compilingSubmissions}`);
+    if (compilingSubmissions !== 0) {
+      const error = new Error(`Expect compilingSubmissions is 0, got ${compilingSubmissions}`);
       DI.logger.error(error);
-      // don't throw
-      throw error;
+      // don't throw any errors
     }
-    //const latestSubmissionsByUser
+    const lsdocs = await this.getLastSubmissionsByUserAsync(false);
+    const matches = await DI.models.Match.addMatchesForSubmissionAsync(
+      submission._id,
+      submission.user,
+      _.filter(lsdocs, lsdoc => !lsdoc._id.equals(submission.user))
+    );
+    // push each round of each match into the queue
+    for (const match of matches) {
+      for (const round of match.rounds) {
+        await DI.mq.publish('judge', {
+          matchId: String(match._id),
+          s1Id: String(match.u1Submission),
+          s2Id: String(match.u2Submission),
+          round: round,
+        });
+      }
+    }
   };
 
   SubmissionSchema.index({ user: 1, createdAt: -1 });
