@@ -24,6 +24,7 @@ export default () => {
   SubmissionSchema.statics.STATUS_PENDING = 'pending';
   SubmissionSchema.statics.STATUS_COMPILING = 'compiling';
   SubmissionSchema.statics.STATUS_COMPILE_ERROR = 'ce';
+  SubmissionSchema.statics.STATUS_SYSTEM_ERROR = 'se';
   SubmissionSchema.statics.STATUS_RUNNING = 'running';
   SubmissionSchema.statics.STATUS_EFFECTIVE = 'effective';
 
@@ -31,6 +32,7 @@ export default () => {
     'pending': 'Pending',
     'compiling': 'Compiling',
     'ce': 'Compile Error',
+    'se': 'System Error',
     'running': 'Running',
     'effective': 'Effective',
   };
@@ -106,7 +108,7 @@ export default () => {
       text: '',
     });
     await newSubmission.save();
-    await this.compileForMatchAsync(newSubmission);
+    await this._compileForMatchAsync(newSubmission);
     return newSubmission;
   };
 
@@ -115,12 +117,11 @@ export default () => {
    * @param  {MongoId|Submission} sidOrSubmission Submission id or Submission object
    * @return {Submission} The new submission object
    */
-  SubmissionSchema.statics.compileForMatchAsync = async function (sidOrSubmission) {
-    let submission;
-    if (objectId.isValid(sidOrSubmission)) {
-      submission = this.getSubmissionObjectByIdAsync(sidOrSubmission);
-    } else {
-      submission = sidOrSubmission;
+  SubmissionSchema.statics._compileForMatchAsync = async function (submission) {
+    if (submission.taskToken) {
+      const error = new Error('Expect taskToken is undefined');
+      DI.logger.error(error);
+      throw error;
     }
     submission.executable = null;
     submission.status = this.STATUS_PENDING;
@@ -132,6 +133,20 @@ export default () => {
       token: submission.taskToken,
     });
     return submission;
+  };
+
+  SubmissionSchema.statics.getLatestSubmissionsByUserAsync = async function (onlyEffective = true) {
+    let statusMatchExp;
+    if (onlyEffective) {
+      statusMatchExp = this.STATUS_EFFECTIVE;
+    } else {
+      statusMatchExp = { $in: [ this.STATUS_RUNNING, this.STATUS_EFFECTIVE ] };
+    }
+    return await this.aggregate([
+      { $match: { status: statusMatchExp } },
+      { $sort: { createdAt: -1 } },
+      { $group: { _id: '$user', submission: { $last: '$_id' } } },
+    ]);
   };
 
   /**
@@ -154,6 +169,25 @@ export default () => {
   };
 
   /**
+   * Mark a submission as System Error
+   *
+   * @param  {MongoId} sid
+   * @param  {String} taskToken
+   * @param  {String} text
+   * @return {Submission}
+   */
+  SubmissionSchema.statics.judgeSetSystemErrorAsync = async function (sid, taskToken, text) {
+    const sdoc = await this.getSubmissionObjectByIdAsync(sid);
+    if (sdoc.taskToken !== taskToken) {
+      throw new errors.UserError('Task token does not match');
+    }
+    sdoc.text = text;
+    sdoc.status = this.STATUS_SYSTEM_ERROR;
+    await sdoc.save();
+    return sdoc;
+  };
+
+  /**
    * Mark a submission as Compile Error or Running and return the submission if the
    * given taskToken matches the submission. For success compiling, it will prepare
    * matches and push match task to the queue.
@@ -167,7 +201,7 @@ export default () => {
    */
   SubmissionSchema.statics.judgeCompleteCompileAsync = async function (sid, taskToken, success, text, exeBuffer = null) {
     if (!success && exeBuffer !== null) {
-      throw new errors.UserError('No executable should be supplied');
+      throw new Error('No executable should be supplied');
     }
     const sdoc = await this.getSubmissionObjectByIdAsync(sid);
     if (sdoc.taskToken !== taskToken) {
@@ -179,14 +213,25 @@ export default () => {
       sdoc.executable = exeBuffer;
     }
     await sdoc.save();
-    // TODO: eventbus
-    /*if (success) {
-      // TODO
-    }*/
+    if (success) {
+      await this._createMatchAsync(sdoc);
+    }
     return sdoc;
   };
 
+  SubmissionSchema.statics._createMatchAsync = async function (submission) {
+    const compilingSubmissions = await this.find({ status: this.STATUS_COMPILING }).count();
+    if (compilingSubmissions !== 1) {
+      const error = new Error(`Expect compilingSubmissions is 1, got ${compilingSubmissions}`);
+      DI.logger.error(error);
+      // don't throw
+      throw error;
+    }
+    //const latestSubmissionsByUser
+  };
+
   SubmissionSchema.index({ user: 1, createdAt: -1 });
+  SubmissionSchema.index({ status: 1, createdAt: -1 });
 
   return mongoose.model('Submission', SubmissionSchema);
 };

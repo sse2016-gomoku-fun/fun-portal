@@ -87,19 +87,35 @@ export default class Handler {
     ]));
   }
 
-  @web.post('/api/startCompile')
+  @web.post('/api/compileBegin')
   @web.middleware(utils.sanitizeBody({
     id: utils.checkNonEmptyString(),
     token: utils.checkNonEmptyString(),
   }))
   @web.middleware(utils.checkAPI())
-  async apiStartCompile(req, res) {
+  async apiCompileBegin(req, res) {
     const sdoc = await DI.models.Submission.judgeStartCompileAsync(req.data.id, req.data.token);
     await sdoc.populate('user').execPopulate();
     res.json(sdoc);
   }
 
-  @web.post('/api/completeCompile')
+  @web.post('/api/compileError')
+  @web.middleware(utils.sanitizeBody({
+    id: utils.checkNonEmptyString(),
+    token: utils.checkNonEmptyString(),
+    text: utils.checkString(),
+  }))
+  @web.middleware(utils.checkAPI())
+  async apiCompileError(req, res) {
+    const sdoc = await DI.models.Submission.judgeSetSystemErrorAsync(
+      req.data.id,
+      req.data.token,
+      req.data.text
+    );
+    res.json(sdoc);
+  }
+
+  @web.post('/api/compileEnd')
   @web.middleware(utils.sanitizeBody({
     id: utils.checkNonEmptyString(),
     token: utils.checkNonEmptyString(),
@@ -108,7 +124,7 @@ export default class Handler {
   }))
   @web.middleware(upload.single('binary'))
   @web.middleware(utils.checkAPI())
-  async apiCompileSuccess(req, res) {
+  async apiCompileEnd(req, res) {
     let buffer = null;
     if (req.data.success && req.file) {
       buffer = await fsp.readFile(req.file.path);
@@ -117,14 +133,14 @@ export default class Handler {
       } catch (ignore) {
       }
     }
-    await DI.models.Submission.judgeCompleteCompileAsync(
+    const sdoc = await DI.models.Submission.judgeCompleteCompileAsync(
       req.data.id,
       req.data.token,
       req.data.success,
       req.data.text,
       buffer,
     );
-    res.json({});
+    res.json(sdoc);
   }
 
 }
