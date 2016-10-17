@@ -101,6 +101,22 @@ export default () => {
     return await this.insertMany(mdocs);
   };
 
+  /**
+   * Given a list of allowed submissions _id, return all useable matches.
+   * @return { [MatchModel] }
+   * @param allowedSubmissionIds { [ObjectId] }
+   */
+  MatchSchema.statics.findByEffectiveSubmissionIds = async function(allowedSubmissionIds) {
+    return await this.find({
+      u1Submission: {
+        $or: allowedSubmissionIds,
+      },
+      u2Submission: {
+        $or: allowedSubmissionIds,
+      },
+    }).exec();
+  };
+
   MatchSchema.index({ u1Submission: 1, u2Submission: -1 }, { unique: true });
 
   return mongoose.model('Match', MatchSchema);
