@@ -107,14 +107,15 @@ export default () => {
    * @param allowedSubmissionIds { [ObjectId] }
    */
   MatchSchema.statics.findByEffectiveSubmissionIds = async function(allowedSubmissionIds) {
-    return await this.find({
-      u1Submission: {
-        $or: allowedSubmissionIds,
-      },
-      u2Submission: {
-        $or: allowedSubmissionIds,
-      },
-    }).exec();
+    const condition = allowedSubmissionIds.map(objectId => objectId.str);
+    console.log(condition);
+    return await this
+      .find()
+      .where('u1Submission')
+      .in(condition)
+      .where('u2Submission')
+      .in(condition)
+      .exec();
   };
 
   MatchSchema.index({ u1Submission: 1, u2Submission: -1 }, { unique: true });

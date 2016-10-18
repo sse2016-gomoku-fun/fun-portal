@@ -125,14 +125,14 @@ export default async function(onlyEffective = true) {
     userScoreMapping[u1IdStr] += (match.u1Stat.score || 0);
     userScoreMapping[u2IdStr] += (match.u2Stat.score || 0);
     // wins counts
-    userWinsMapping[u1IdStr] += (match.u1Stat.win);
-    userWinsMapping[u2IdStr] += (match.u2Stat.win);
+    userWinsMapping[u1IdStr] += (match.u1Stat.win || 0);
+    userWinsMapping[u2IdStr] += (match.u2Stat.win || 0);
     // lose counts
-    userLosesMapping[u1IdStr] += (match.u1Stat.lose);
-    userLosesMapping[u2IdStr] += (match.u2Stat.lose);
+    userLosesMapping[u1IdStr] += (match.u1Stat.lose || 0);
+    userLosesMapping[u2IdStr] += (match.u2Stat.lose || 0);
     // draw counts
-    userDrawsMapping[u1IdStr] += (match.u1Stat.draw);
-    userDrawsMapping[u2IdStr] += (match.u2Stat.draw);
+    userDrawsMapping[u1IdStr] += (match.u1Stat.draw || 0);
+    userDrawsMapping[u2IdStr] += (match.u2Stat.draw || 0);
   });
 
   /**

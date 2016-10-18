@@ -1,5 +1,6 @@
 import * as web from 'express-decorators';
 import utils from 'libs/utils';
+import asyncGetLeaderboard from 'libs/leaderboard';
 
 @web.controller('/')
 export default class Handler {
@@ -13,9 +14,11 @@ export default class Handler {
   @web.get('/')
   @web.middleware(utils.checkProfile())
   async getScoreboardAction(req, res) {
+    const results = await asyncGetLeaderboard(true);
+    // DEBUG
+    console.log(results);
     res.render('home', {
       page_title: 'Scoreboard',
     });
   }
-
 }
