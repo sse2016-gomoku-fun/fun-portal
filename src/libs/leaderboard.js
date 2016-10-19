@@ -64,7 +64,7 @@ export default async function(onlyEffective = true) {
    * Transform mappings to key-value format (ObjectId will be parsed to string)
    */
   mappings.forEach((pair) => {
-    userSubmissionMappings[pair._id.str] = pair.submissionId.str;
+    userSubmissionMappings[pair._id.toString()] = pair.submissionId.toString();
     listedSubmissionIds.push(pair.submissionId);
   });
 
@@ -72,7 +72,7 @@ export default async function(onlyEffective = true) {
    * List of all user models and userIds
    */
   const userList = await UserModel.find({}).exec();
-  const userIdsList = userList.map((userDoc) => userDoc._id.str);
+  const userIdsList = userList.map((userDoc) => userDoc._id.toString());
 
   /**
    * If we have a user collection of [A, B, C, D]
@@ -91,7 +91,7 @@ export default async function(onlyEffective = true) {
   const userDrawsMapping = {};
 
   userList.forEach((userDoc) => {
-    const userIdStr = userDoc._id.str;
+    const userIdStr = userDoc._id.toString();
     matchCounting[userIdStr] = initializeMatchCounting(
       userIdStr, userIdsList
     );
@@ -112,8 +112,8 @@ export default async function(onlyEffective = true) {
    * Count result for each user by matches
    */
   matchesList.forEach((match) => {
-    const u1IdStr = match.u1.str;
-    const u2IdStr = match.u2.str;
+    const u1IdStr = match.u1.toString();
+    const u2IdStr = match.u2.toString();
     // If A vs B score has been counted once, just skip
     if (matchCounting[u1IdStr][u2IdStr]) {
       return null;
@@ -135,17 +135,21 @@ export default async function(onlyEffective = true) {
     userDrawsMapping[u2IdStr] += (match.u2Stat.draw || 0);
   });
 
+  // DEBUG
+  console.log('matchCounting = ');
+  console.log(matchCounting);
+
   /**
    * return scoreboard of all users.
    */
   return userList
     .map((userDoc) => ({
       user: _.cloneDeep(userDoc),
-      score: userScoreMapping[userDoc._id.str],
-      win: userWinsMapping[userDoc._id.str],
-      lose: userLosesMapping[userDoc._id.str],
-      draw: userDrawsMapping[userDoc._id.str],
-      submission: userSubmissionMappings[userDoc._id.str] || null,
+      score: userScoreMapping[userDoc._id.toString()],
+      win: userWinsMapping[userDoc._id.toString()],
+      lose: userLosesMapping[userDoc._id.toString()],
+      draw: userDrawsMapping[userDoc._id.toString()],
+      submission: userSubmissionMappings[userDoc._id.toString()] || null,
     }))
     .sort((a, b) => (b.score - a.score))
     .map((scoreboardRow, idx) => _.assign({}, scoreboardRow, {

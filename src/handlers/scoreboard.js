@@ -16,6 +16,7 @@ export default class Handler {
   async getScoreboardAction(req, res) {
     const results = await asyncGetLeaderboard(true);
     // DEBUG
+    console.log('results :');
     console.log(results);
     res.render('home', {
       page_title: 'Scoreboard',
