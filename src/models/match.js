@@ -106,18 +106,17 @@ export default () => {
    * @return { [MatchModel] }
    * @param allowedSubmissionIds { [ObjectId] }
    */
-  MatchSchema.statics.findByEffectiveSubmissionIds = async function(allowedSubmissionIds) {
-    const condition = allowedSubmissionIds.map(objectId => objectId.toString());
-    // DEBUG
-    console.log('condition:', condition);
-    return await this.find({
-      u1Submission: {
-        $in: condition,
-      },
-      u2Submission: {
-        $in: condition,
-      },
-    }).exec();
+  MatchSchema.statics.getPairwiseMatchesForSubmissionsAsync = async function(allowedSubmissionIds) {
+    return await this
+      .find({
+        u1Submission: {
+          $in: allowedSubmissionIds,
+        },
+        u2Submission: {
+          $in: allowedSubmissionIds,
+        },
+      })
+      .exec();
   };
 
   MatchSchema.index({ u1Submission: 1, u2Submission: -1 }, { unique: true });

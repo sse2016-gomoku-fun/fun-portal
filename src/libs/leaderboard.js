@@ -2,8 +2,9 @@ import _ from 'lodash';
 
 /**
  * Initialize match counting for a user A.
- * If result of A vs B has been counted, mark matchCounting[B] = true. (Else false)
- * matchCounting[A] should always be true.
+ * If result of A vs B has been counted,
+ * mark matchCounting[A][B] = matchCounting[B][A] = true. (Else false)
+ * matchCounting[A][A] should always be true.
  * @return {{ userId(String): Boolean }}
  * @param userId
  * @param allUserIdList
@@ -32,11 +33,11 @@ function initializeMatchCounting(userId, allUserIdList) {
  */
 export default async function(onlyEffective = true) {
   // Submission Model, see /src/models/submission.js
-  const SubmissionModel = global.DI.models.Submission;
+  const SubmissionModel = DI.models.Submission;
   // Match Model, see /src/models/match.js
-  const MatchModel = global.DI.models.Match;
+  const MatchModel = DI.models.Match;
   // Users Model, see /src/models/match.js
-  const UserModel = global.DI.models.User;
+  const UserModel = DI.models.User;
 
   /**
    * key-value format userId (string) -> latest submission mappings
@@ -82,9 +83,9 @@ export default async function(onlyEffective = true) {
    * matchCounting[X] will record whether we have counted a match with X as A's opponent.
    */
   const matchCounting = {};
-  /*
+  /**
    * And we need to store score, wins, loses, draws for each user
-   * */
+   */
   const userScoreMapping = {};
   const userWinsMapping = {};
   const userLosesMapping = {};
@@ -106,7 +107,7 @@ export default async function(onlyEffective = true) {
    * "useable" means that both submissions of two users are effective submissions
    */
   const matchesList = await MatchModel
-    .findByEffectiveSubmissionIds(listedSubmissionIds);
+    .getPairwiseMatchesForSubmissionsAsync(listedSubmissionIds);
 
   /**
    * Count result for each user by matches
@@ -119,8 +120,7 @@ export default async function(onlyEffective = true) {
       return null;
     }
     // else we will count score for u1 and u2
-    matchCounting[u1IdStr][u2IdStr] = true;
-    matchCounting[u2IdStr][u1IdStr] = true;
+    matchCounting[u1IdStr][u2IdStr] = matchCounting[u2IdStr][u1IdStr] = true;
     // score
     userScoreMapping[u1IdStr] += (match.u1Stat.score || 0);
     userScoreMapping[u2IdStr] += (match.u2Stat.score || 0);
@@ -135,24 +135,41 @@ export default async function(onlyEffective = true) {
     userDrawsMapping[u2IdStr] += (match.u2Stat.draw || 0);
   });
 
-  // DEBUG
-  console.log('matchCounting = ');
-  console.log(matchCounting);
+  /**
+   * Get order from each user
+   * @param result
+   * @param currentUser
+   * @param idx
+   * @returns {number}
+   */
+  const getOrder = (result, currentUser, idx) => {
+    if (idx === 0) {
+      return 1;
+    }
+    const prevUser = result[idx - 1];
+    if (prevUser.score === currentUser.score) {
+      return prevUser.order;
+    }
+    return idx + 1;
+  };
 
   /**
    * return scoreboard of all users.
    */
-  return userList
+  return _(userList)
     .map((userDoc) => ({
-      user: _.cloneDeep(userDoc),
+      user: userDoc,
       score: userScoreMapping[userDoc._id.toString()],
       win: userWinsMapping[userDoc._id.toString()],
       lose: userLosesMapping[userDoc._id.toString()],
       draw: userDrawsMapping[userDoc._id.toString()],
       submission: userSubmissionMappings[userDoc._id.toString()] || null,
     }))
-    .sort((a, b) => (b.score - a.score))
-    .map((scoreboardRow, idx) => _.assign({}, scoreboardRow, {
-      order: idx + 1,
-    }));
+    .orderBy(['score', 'user._id'], ['desc', 'desc'])
+    .reduce((result, user, idx) => {
+      result.push(_.assign({}, user, {
+        order: getOrder(result, user, idx),
+      }));
+      return result;
+    }, []);
 }
