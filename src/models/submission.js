@@ -42,6 +42,29 @@ export default () => {
     'effective': 'Effective',
   };
 
+  SubmissionSchema.pre('save', function (next) {
+    this.__lastIsNew = this.isNew;
+    this.__lastModifiedPaths = this.modifiedPaths();
+    next();
+  });
+
+  SubmissionSchema.post('save', function () {
+    if (this.__lastIsNew) {
+      DI.eventBus.emit('submission.new::**', this);
+    }
+    this.__lastModifiedPaths.forEach(path => {
+      let m;
+      if (path === 'status') {
+        // sdoc
+        DI.eventBus.emit('submission.statusChanged::**', this);
+      }
+      if (m = path.match(/^matches\.(\d+)\.status$/)) {
+        // sdoc, matchidx
+        DI.eventBus.emit('submission.match.statusChanged::**', this, this.matches[m[1]]);
+      }
+    });
+  });
+
   async function updateSingleSubmissionStatus(submissionId) {
     try {
       const submission = await Submission.getSubmissionObjectByIdAsync(submissionId);
@@ -62,12 +85,8 @@ export default () => {
   /**
    * Update the submission status when match status is updated
    */
-  SubmissionSchema.pre('save', function (next) {
-    const modifiedPaths = this.modifiedPaths();
-    if (_.some(modifiedPaths, path => path.match(/^matches\.\d+\.status$/))) {
-      submissionStatusUpdateQueue.push(this._id);
-    }
-    next();
+  DI.eventBus.on('submission.match.statusChanged', sdoc => {
+    submissionStatusUpdateQueue.push(sdoc._id);
   });
 
   /**

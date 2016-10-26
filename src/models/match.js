@@ -65,6 +65,29 @@ export default () => {
 
   MatchSchema.statics.ROUND_STATUS_TEXT = MatchSchema.statics.STATUS_TEXT;
 
+  MatchSchema.pre('save', function (next) {
+    this.__lastIsNew = this.isNew;
+    this.__lastModifiedPaths = this.modifiedPaths();
+    next();
+  });
+
+  MatchSchema.post('save', function () {
+    if (this.__lastIsNew) {
+      DI.eventBus.emit('match.new::**', this);
+    }
+    this.__lastModifiedPaths.forEach(path => {
+      let m;
+      if (path === 'status') {
+        // mdoc
+        DI.eventBus.emit('match.statusChanged::**', this);
+      }
+      if (m = path.match(/^rounds\.(\d+)\.status$/)) {
+        // mdoc, roundidx
+        DI.eventBus.emit('match.round.statusChanged::**', this, this.rounds[m[1]]);
+      }
+    });
+  });
+
   async function updateSingleMatchStatus(matchId) {
     try {
       const match = await Match.getMatchObjectByIdAsync(matchId);
@@ -85,22 +108,8 @@ export default () => {
   /**
    * Update the match status when round status is updated
    */
-  MatchSchema.pre('save', function (next) {
-    const modifiedPaths = this.modifiedPaths();
-    if (_.some(modifiedPaths, path => path.match(/^rounds\.\d+\.status$/))) {
-      matchStatusUpdateQueue.push(this._id);
-    }
-    next();
-  });
-
-  /**
-   * Broadcast match status changed event when it is changed
-   */
-  MatchSchema.pre('save', function (next) {
-    if (this.isModified('status')) {
-      setTimeout(() => DI.eventBus.emit('match.statusChanged', this), 1000);
-    }
-    next();
+  DI.eventBus.on('match.round.statusChanged', mdoc => {
+    matchStatusUpdateQueue.push(mdoc._id);
   });
 
   /**
@@ -153,6 +162,7 @@ export default () => {
 
   /**
    * Get opening data from opening id
+   * TODO: optimize
    * @param  {String} openingId
    * @return {String}
    */
@@ -191,32 +201,40 @@ export default () => {
    * @param {[{_id: User, sdocid: Submission}]} s2u2docs
    */
   MatchSchema.statics.addMatchesForSubmissionAsync = async function (s1, u1, s2u2docs) {
+    await Match.remove({ u1Submission: s1 });
     if (s2u2docs.length === 0) {
       return [];
     }
-    await Match.remove({ u1Submission: s1 });
-    const mdocs = await Match.insertMany(s2u2docs.map(s2u2doc => ({
-      status: Match.STATUS_PENDING,
-      u1,
-      u2: s2u2doc._id,
-      u1Submission: s1,
-      u2Submission: s2u2doc.sdocid,
-      rounds: generateRoundDocs(),
-    })));
-    // push each round of each match into the queue
-    for (const match of mdocs) {
-      for (const round of match.rounds) {
-        await DI.mq.publish('judge', {
-          mdocid: String(match._id),
-          s1docid: String(match.u1Submission),
-          s2docid: String(match.u2Submission),
-          rid: round._id,
-          u1field: round.u1Black ? 'black' : 'white',
-          opening: await Match.getOpeningFromIdAsync(round.openingId),
-          rules: DI.config.match.rules,
-        });
-      }
-    }
+
+    const token = Math.random();
+    console.time(`Match.addMatchesForSubmissionAsync ${token}`);
+
+    const mdocs = [];
+    await Promise.all(s2u2docs.map(async s2u2doc => {
+      const mdoc = new Match({
+        status: Match.STATUS_PENDING,
+        u1,
+        u2: s2u2doc._id,
+        u1Submission: s1,
+        u2Submission: s2u2doc.sdocid,
+        rounds: generateRoundDocs(),
+      });
+      await mdoc.save();
+      // push each round of each match into the queue
+      await Promise.all(mdoc.rounds.map(async round => await DI.mq.publish('judge', {
+        mdocid: String(mdoc._id),
+        s1docid: String(mdoc.u1Submission),
+        s2docid: String(mdoc.u2Submission),
+        rid: round._id,
+        u1field: round.u1Black ? 'black' : 'white',
+        opening: await Match.getOpeningFromIdAsync(round.openingId),
+        rules: DI.config.match.rules,
+      })));
+      mdocs.push(mdoc);
+    }));
+
+    console.timeEnd(`Match.addMatchesForSubmissionAsync ${token}`);
+
     return mdocs;
   };
 
