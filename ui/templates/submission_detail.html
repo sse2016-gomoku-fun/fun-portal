@@ -132,9 +132,15 @@
             {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
           </span>
         </dd>
-        <dt>Submitted By</dt>
+        <dt>Submit By</dt>
         <dd>{{ sdoc.user.profile.displayName }}</dd>
-        <dt>Submitted At</dt>
+      {% if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
+        <dt>Std Id</dt>
+        <dd>{{ sdoc.user.profile.studentId }}</dd>
+        <dt>Real Name</dt>
+        <dd>{{ sdoc.user.profile.realName }}</dd>
+      {% endif %}
+        <dt>Submit At</dt>
         <dd>{{ sdoc.createdAt|datetime }}</dd>
       </dl>
     </div>

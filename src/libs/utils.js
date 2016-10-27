@@ -18,7 +18,7 @@ utils.substitute = (str, obj) => {
 utils.url = (s, absolute = false, obj = null) => {
   let url = `${DI.config.urlPrefix}${s}`;
   if (absolute) {
-    url = `${DI.config.host}${url}`;
+    url = `http://${DI.config.host}${url}`;
   }
   if (obj === null) {
     return url;

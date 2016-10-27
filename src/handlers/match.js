@@ -4,12 +4,14 @@ import fsp from 'fs-promise';
 import utils from 'libs/utils';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
+import socket from 'libs/socket';
 
 // file limit is infinity
 const logUpload = multer({
   storage: multer.diskStorage({}),
 });
 
+@socket.enable()
 @web.controller('/match')
 export default class Handler {
 
@@ -99,6 +101,30 @@ export default class Handler {
     res.render('match_detail', {
       page_title: 'Match Detail',
       mdoc,
+    });
+  }
+
+  @socket.namespace('/match_detail')
+  async socketMatchDetailConnect(socket, query, nsp) {
+    DI.eventBus.on(`match.statusChanged::${socket.id}`, mdoc => {
+      if (!mdoc._id.equals(query.id)) {
+        return;
+      }
+      socket.emit('update_match_status', {
+        html: DI.webTemplate.render('partials/match_detail_match_status.html', { mdoc }),
+      });
+    });
+    DI.eventBus.on(`match.round.updated::${socket.id}`, (mdoc, rdoc) => {
+      if (!mdoc._id.equals(query.id)) {
+        return;
+      }
+      socket.emit('update_round_row', {
+        html: DI.webTemplate.render('partials/match_detail_round_row.html', { mdoc, rdoc }),
+      });
+    });
+    socket.on('disconnect', () => {
+      DI.eventBus.removeAllListeners(`match.statusChanged::${socket.id}`);
+      DI.eventBus.removeAllListeners(`match.round.updated::${socket.id}`);
     });
   }
 

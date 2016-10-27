@@ -78,4 +78,5 @@ handlers:
   path: handlers
   inject:
     - webServer
+    - webSocket
     - logger

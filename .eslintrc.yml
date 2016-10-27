@@ -18,6 +18,7 @@ globals:
   __codeRoot: true
   __projectRoot: true
   UiContext: true
+  Context: true
   $: true
   DI: true
 rules:

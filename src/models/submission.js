@@ -59,7 +59,7 @@ export default () => {
         DI.eventBus.emit('submission.statusChanged::**', this);
       }
       if (m = path.match(/^matches\.(\d+)\.status$/)) {
-        // sdoc, matchidx
+        // sdoc, smdoc
         DI.eventBus.emit('submission.match.statusChanged::**', this, this.matches[m[1]]);
       }
     });

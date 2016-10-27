@@ -2,6 +2,7 @@ import _ from 'lodash';
 import fsp from 'fs-promise';
 import mongoose from 'mongoose';
 import async from 'async';
+import uuid from 'uuid';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
 
@@ -81,8 +82,12 @@ export default () => {
         // mdoc
         DI.eventBus.emit('match.statusChanged::**', this);
       }
+      if (m = path.match(/^rounds\.(\d+)$/)) {
+        // mdoc, rdoc
+        DI.eventBus.emit('match.round.updated::**', this, this.rounds[m[1]]);
+      }
       if (m = path.match(/^rounds\.(\d+)\.status$/)) {
-        // mdoc, roundidx
+        // mdoc, rdoc
         DI.eventBus.emit('match.round.statusChanged::**', this, this.rounds[m[1]]);
       }
     });
@@ -206,8 +211,8 @@ export default () => {
       return [];
     }
 
-    const token = Math.random();
-    console.time(`Match.addMatchesForSubmissionAsync ${token}`);
+    const token = uuid.v4();
+    DI.logger.profile(`Match.addMatchesForSubmissionAsync-${token}`);
 
     const mdocs = [];
     await Promise.all(s2u2docs.map(async s2u2doc => {
@@ -233,7 +238,7 @@ export default () => {
       mdocs.push(mdoc);
     }));
 
-    console.timeEnd(`Match.addMatchesForSubmissionAsync ${token}`);
+    DI.logger.profile(`Match.addMatchesForSubmissionAsync-${token}`);
 
     return mdocs;
   };
