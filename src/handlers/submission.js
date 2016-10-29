@@ -186,18 +186,27 @@ export default class Handler {
     res.redirect(utils.url('/submission'));
   }
 
-  @web.get('/:id')
+  @web.get('/:id/:page?')
+  @web.middleware(utils.sanitizeParam({
+    page: utils.checkPageNumber().optional(1),
+  }))
   @web.middleware(utils.checkPermission(permissions.VIEW_ANY_SUBMISSION))
   async getSubmissionDetailAction(req, res) {
     const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.params.id);
     await sdoc.populate('user').execPopulate();
-    const mdocs = await DI.models.Match.getMatchesForSubmissionAsync(sdoc._id);
+    const [ mdocs, pages ] = await utils.pagination(
+      DI.models.Match.getMatchesForSubmissionCursor(sdoc._id),
+      req.data.page,
+      SUBMISSIONS_PER_PAGE
+    );
     await DI.models.User.populate(mdocs, 'u1 u2');
     await DI.models.Submission.populate(mdocs, 'u1Submission u2Submission');
     res.render('submission_detail', {
       page_title: 'Submission Detail',
       sdoc,
       mdocs,
+      pages,
+      page: req.data.page,
       getRelativeStatus: (status, mdoc) => DI.models.Match.getRelativeStatus(status, mdoc.u1.equals(sdoc.user)),
     });
   }

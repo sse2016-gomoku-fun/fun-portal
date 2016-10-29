@@ -359,16 +359,17 @@ export default () => {
   /**
    * Get all related matches for a submission
    * @param  {MongoId} sid
-   * @return {[Match]}
+   * @return {[Cursor]}
    */
-  MatchSchema.statics.getMatchesForSubmissionAsync = async function (sid) {
-    const mdocs = await Match.find({
-      $or: [
-        { u1Submission: sid },
-        { u2Submission: sid },
-      ],
-    }).sort({ _id: -1 }).limit(20);
-    return mdocs;
+  MatchSchema.statics.getMatchesForSubmissionCursor = function (sid) {
+    return Match
+      .find({
+        $or: [
+          { u1Submission: sid },
+          { u2Submission: sid },
+        ],
+      })
+      .sort({ _id: -1 });
   };
 
   /**
@@ -406,7 +407,8 @@ export default () => {
   };
 
   MatchSchema.index({ u1Submission: 1, u2Submission: -1, status: 1, _id: -1 }, { unique: true });
-  MatchSchema.index({ u2Submission: 1 });
+  MatchSchema.index({ u1Submission: 1, _id: -1 });
+  MatchSchema.index({ u2Submission: 1, _id: -1 });
 
   Match = mongoose.model('Match', MatchSchema);
   return Match;
