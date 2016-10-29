@@ -2,6 +2,7 @@ import * as web from 'express-decorators';
 import multer from 'multer';
 import fsp from 'fs-promise';
 import utils from 'libs/utils';
+import sanitizers from 'libs/sanitizers';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
 
@@ -30,8 +31,8 @@ export default class Handler {
 
   @web.post('/api/compileBegin')
   @web.middleware(utils.sanitizeBody({
-    id: utils.checkNonEmptyString(),
-    token: utils.checkNonEmptyString(),
+    id: sanitizers.nonEmptyString(),
+    token: sanitizers.nonEmptyString(),
   }))
   @web.middleware(utils.checkAPI())
   async apiCompileBegin(req, res) {
@@ -45,9 +46,9 @@ export default class Handler {
 
   @web.post('/api/compileError')
   @web.middleware(utils.sanitizeBody({
-    id: utils.checkNonEmptyString(),
-    token: utils.checkNonEmptyString(),
-    text: utils.checkString(),
+    id: sanitizers.nonEmptyString(),
+    token: sanitizers.nonEmptyString(),
+    text: sanitizers.string(),
   }))
   @web.middleware(utils.checkAPI())
   async apiCompileError(req, res) {
@@ -61,10 +62,10 @@ export default class Handler {
 
   @web.post('/api/compileEnd')
   @web.middleware(utils.sanitizeBody({
-    id: utils.checkNonEmptyString(),
-    token: utils.checkNonEmptyString(),
-    text: utils.checkString(),
-    success: utils.checkBool(),
+    id: sanitizers.nonEmptyString(),
+    token: sanitizers.nonEmptyString(),
+    text: sanitizers.string(),
+    success: sanitizers.bool(),
   }))
   @web.middleware(binUpload.single('binary'))
   @web.middleware(utils.checkAPI())
@@ -96,7 +97,7 @@ export default class Handler {
 
   @web.get('/api/binary')
   @web.middleware(utils.sanitizeQuery({
-    id: utils.checkNonEmptyString(),
+    id: sanitizers.nonEmptyString(),
   }))
   @web.middleware(utils.checkAPI())
   async apiGetBinary(req, res) {
@@ -125,7 +126,7 @@ export default class Handler {
 
   @web.get('/all/:page?')
   @web.middleware(utils.sanitizeParam({
-    page: utils.checkPageNumber().optional(1),
+    page: sanitizers.pageNumber().optional(1),
   }))
   @web.middleware(utils.checkPermission(permissions.VIEW_ALL_SUBMISSIONS))
   async getAllSubmissionsAction(req, res) {
@@ -145,7 +146,7 @@ export default class Handler {
 
   @web.get('/my/:page?')
   @web.middleware(utils.sanitizeParam({
-    page: utils.checkPageNumber().optional(1),
+    page: sanitizers.pageNumber().optional(1),
   }))
   @web.middleware(utils.checkPermission(permissions.VIEW_OWN_SUBMISSIONS))
   async getMySubmissionsAction(req, res) {
@@ -157,6 +158,29 @@ export default class Handler {
     await DI.models.User.populate(sdocs, 'user');
     res.render('submission_my', {
       page_title: 'My Submissions',
+      sdocs,
+      page: req.data.page,
+      pages,
+    });
+  }
+
+  @web.get('/user/:uid/:page?')
+  @web.middleware(utils.sanitizeParam({
+    uid: sanitizers.objectId(),
+    page: sanitizers.pageNumber().optional(1),
+  }))
+  @web.middleware(utils.checkPermission(permissions.VIEW_OWN_SUBMISSIONS))
+  async getUserSubmissionsAction(req, res) {
+    const udoc = await DI.models.User.getUserObjectByIdAsync(req.data.uid);
+    const [ sdocs, pages ] = await utils.pagination(
+      DI.models.Submission.getUserSubmissionsCursor(req.data.uid),
+      req.data.page,
+      SUBMISSIONS_PER_PAGE
+    );
+    await DI.models.User.populate(sdocs, 'user');
+    res.render('submission_all', {
+      page_title: 'User Submissions',
+      udoc,
       sdocs,
       page: req.data.page,
       pages,
@@ -177,7 +201,7 @@ export default class Handler {
 
   @web.post('/create')
   @web.middleware(utils.sanitizeBody({
-    code: utils.checkNonEmptyString(),
+    code: sanitizers.nonEmptyString(),
   }))
   @web.middleware(utils.checkCompleteProfile())
   @web.middleware(utils.checkPermission(permissions.CREATE_SUBMISSION))
@@ -191,11 +215,12 @@ export default class Handler {
 
   @web.get('/:id/:page?')
   @web.middleware(utils.sanitizeParam({
-    page: utils.checkPageNumber().optional(1),
+    id: sanitizers.objectId(),
+    page: sanitizers.pageNumber().optional(1),
   }))
   @web.middleware(utils.checkPermission(permissions.VIEW_ANY_SUBMISSION))
   async getSubmissionDetailAction(req, res) {
-    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.params.id);
+    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(req.data.id);
     await sdoc.populate('user').execPopulate();
     const [ mdocs, pages ] = await utils.pagination(
       DI.models.Match.getMatchesForSubmissionCursor(sdoc._id),
@@ -215,9 +240,12 @@ export default class Handler {
   }
 
   @web.post('/:id/rejudge')
+  @web.middleware(utils.sanitizeParam({
+    id: sanitizers.objectId(),
+  }))
   @web.middleware(utils.checkPermission(permissions.REJUDGE_SUBMISSION))
   async postSubmissionRejudgeAction(req, res) {
-    const sdoc = await DI.models.Submission.recompileAsync(req.params.id);
+    const sdoc = await DI.models.Submission.recompileAsync(req.data.id);
     res.redirect(utils.url('/submission/{0}', false, [sdoc._id]));
   }
 

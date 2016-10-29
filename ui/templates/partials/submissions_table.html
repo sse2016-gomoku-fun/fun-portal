@@ -27,7 +27,10 @@
         </a>
       </td>
       <td class="col--time">{{ sdoc.createdAt|datetime }}</td>
-      <td class="col--by">#{{ sdoc.version }}: {{ sdoc.user.profile.displayName }}</td>
+      <td class="col--by">
+        #{{ sdoc.version }}:
+        <a href="{{ url('/submission/user/{0}', false, [sdoc.user._id]) }}">{{ sdoc.user.profile.displayName }}</a>
+      </td>
     {% if sdoc.matches %}
       {% set match_status = sdoc.matches | groupby('status') %}
       <td class="col--wins">{{ match_status.u1win | length | default(0) }}</td>

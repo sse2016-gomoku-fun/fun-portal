@@ -49,7 +49,15 @@
         <dl class="large horizontal">
           <dt>By</dt>
           <dd>
-            #{{ mdoc.u1Submission.version }}: {{ mdoc.u1.profile.displayName }}
+            <a href="{{ url('/submission/user/{0}', false, [mdoc.u1._id]) }}">
+              {{ mdoc.u1.profile.displayName }}
+            </dd>
+          </dd>
+          <dt>Version</dt>
+          <dd>
+            <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission._id]) }}">
+              #{{ mdoc.u1Submission.version }}
+            </a>
           </dd>
         {% if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
           <dt>Std Id</dt>
@@ -59,18 +67,20 @@
         {% endif %}
           <dt>Submit At</dt>
           <dd>{{ mdoc.u1Submission.createdAt|datetime }}</dd>
-          <dt>Detail</dt>
-          <dd>
-            <a href="{{ url('/submission/{0}', false, [mdoc.u1Submission._id]) }}">
-              View Submission
-            </a>
-          </dd>
         </dl>
         <h2 class="section__title">Opponent</h2>
         <dl class="large horizontal">
           <dt>By</dt>
           <dd>
-            #{{ mdoc.u2Submission.version }}: {{ mdoc.u2.profile.displayName }}
+            <a href="{{ url('/submission/user/{0}', false, [mdoc.u2._id]) }}">
+              {{ mdoc.u2.profile.displayName }}
+            </a>
+          </dd>
+          <dt>Version</dt>
+          <dd>
+            <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission._id]) }}">
+              #{{ mdoc.u2Submission.version }}
+            </a>
           </dd>
         {% if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
           <dt>Std Id</dt>
@@ -80,12 +90,6 @@
         {% endif %}
           <dt>Submit At</dt>
           <dd>{{ mdoc.u2Submission.createdAt|datetime }}</dd>
-          <dt>Detail</dt>
-          <dd>
-            <a href="{{ url('/submission/{0}', false, [mdoc.u2Submission._id]) }}">
-              View Submission
-            </a>
-          </dd>
         </dl>
       </div>
     </div>

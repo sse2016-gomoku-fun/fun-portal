@@ -40,7 +40,11 @@
           </span>
         </dd>
         <dt>Submit By</dt>
-        <dd>{{ sdoc.user.profile.displayName }}</dd>
+        <dd>
+          <a href="{{ url('/submission/user/{0}', false, [sdoc.user._id]) }}">
+            {{ sdoc.user.profile.displayName }}
+          </a>
+        </dd>
       {% if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
         <dt>Std Id</dt>
         <dd>{{ sdoc.user.profile.studentId }}</dd>

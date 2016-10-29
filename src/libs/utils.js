@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import validator from 'validator';
+
 import auth from 'basic-auth';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
@@ -99,69 +99,6 @@ utils.sanitizeBody = (patterns) => sanitizeExpress('body', patterns);
 utils.sanitizeQuery = (patterns) => sanitizeExpress('query', patterns);
 
 utils.sanitizeParam = (patterns) => sanitizeExpress('params', patterns);
-
-class Checker {
-  constructor(testFunc) {
-    this.test = testFunc;
-  }
-  optional(val) {
-    this.optional = true;
-    this.optionalValue = val;
-    return this;
-  }
-}
-
-utils.checkInt = () => new Checker((any) => {
-  if (typeof any === 'number') {
-    return Math.floor(any);
-  }
-  const str = String(any);
-  if (!validator.isInt(str)) {
-    throw new Error('integer number');
-  }
-  return validator.toInt(str);
-});
-
-utils.checkString = () => new Checker((any) => {
-  if (typeof any === 'string') {
-    return any;
-  }
-  throw new Error('string');
-});
-
-utils.checkNonEmptyString = () => new Checker((any) => {
-  if (typeof any === 'string') {
-    if (any.trim().length === 0) {
-      throw new Error('non empty string');
-    }
-    return any.trim();
-  }
-  throw new Error('non empty string');
-});
-
-utils.checkBool = () => new Checker((any) => {
-  if (typeof any === 'boolean') {
-    return any;
-  }
-  if (any === 'true') {
-    return true;
-  } else if (any === 'false') {
-    return false;
-  }
-  throw new Error('boolean');
-});
-
-utils.checkPageNumber = () => new Checker((any) => {
-  const str = String(any);
-  if (!validator.isInt(str)) {
-    throw new Error('page number');
-  }
-  const num = validator.toInt(str);
-  if (num < 1) {
-    throw new Error('page number');
-  }
-  return num;
-});
 
 utils.pagination = async (query, page, pageSize) => {
   const count = await query.model.count(query._conditions);

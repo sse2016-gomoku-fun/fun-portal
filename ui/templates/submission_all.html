@@ -2,11 +2,19 @@
 {% block submission_content %}
 <div class="section">
   <div class="section__header">
+  {% if udoc %}
+    <h1 class="section__title">Submissions by {{ udoc.profile.displayName }}</h1>
+  {% else %}
     <h1 class="section__title">All Submissions</h1>
+  {% endif %}
   </div>
   <div class="section__body no-padding">
     {% include "partials/submissions_table.html" %}
+  {% if udoc %}
+    {{ paginator.render(page, pages, url('/submission/user/{0}/{page}', false, [udoc._id])) }}
+  {% else %}
     {{ paginator.render(page, pages, url('/submission/all/{page}')) }}
+  {% endif %}
   </div>
 </div>
 {% endblock %}

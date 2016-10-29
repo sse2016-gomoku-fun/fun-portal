@@ -2,6 +2,7 @@ import * as web from 'express-decorators';
 import multer from 'multer';
 import fsp from 'fs-promise';
 import utils from 'libs/utils';
+import sanitizers from 'libs/sanitizers';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
 import socket from 'libs/socket';
@@ -17,8 +18,8 @@ export default class Handler {
 
   @web.post('/api/roundBegin')
   @web.middleware(utils.sanitizeBody({
-    mid: utils.checkNonEmptyString(),
-    rid: utils.checkNonEmptyString(),
+    mid: sanitizers.nonEmptyString(),
+    rid: sanitizers.nonEmptyString(),
   }))
   @web.middleware(utils.checkAPI())
   async apiRoundBegin(req, res) {
@@ -31,9 +32,9 @@ export default class Handler {
 
   @web.post('/api/roundError')
   @web.middleware(utils.sanitizeBody({
-    mid: utils.checkNonEmptyString(),
-    rid: utils.checkNonEmptyString(),
-    text: utils.checkNonEmptyString(),
+    mid: sanitizers.nonEmptyString(),
+    rid: sanitizers.nonEmptyString(),
+    text: sanitizers.nonEmptyString(),
   }))
   @web.middleware(utils.checkAPI())
   async apiRoundError(req, res) {
@@ -50,10 +51,10 @@ export default class Handler {
 
   @web.post('/api/roundComplete')
   @web.middleware(utils.sanitizeBody({
-    mid: utils.checkNonEmptyString(),
-    rid: utils.checkNonEmptyString(),
-    exitCode: utils.checkInt(),
-    summary: utils.checkNonEmptyString(),
+    mid: sanitizers.nonEmptyString(),
+    rid: sanitizers.nonEmptyString(),
+    exitCode: sanitizers.int(),
+    summary: sanitizers.nonEmptyString(),
   }))
   @web.middleware(logUpload.single('log'))
   @web.middleware(utils.checkAPI())
