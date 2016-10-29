@@ -138,6 +138,7 @@ export default class Handler {
     res.render('submission_all', {
       page_title: 'All Submissions',
       sdocs,
+      page: req.data.page,
       pages,
     });
   }
@@ -153,9 +154,11 @@ export default class Handler {
       req.data.page,
       SUBMISSIONS_PER_PAGE
     );
+    await DI.models.User.populate(sdocs, 'user');
     res.render('submission_my', {
       page_title: 'My Submissions',
       sdocs,
+      page: req.data.page,
       pages,
     });
   }

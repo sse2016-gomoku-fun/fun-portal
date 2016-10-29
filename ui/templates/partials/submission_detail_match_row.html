@@ -2,10 +2,8 @@
   {% set status = getRelativeStatus(mdoc.status, mdoc) %}
   <td class="col--status match-status--border {{ status }}">
     <span class="icon match-status--icon {{ status }}"></span>
-    <a href="{{ url('/match/{0}', false, [mdoc._id]) }}">
-      <span class="match-status--text {{ status }}">
-        {{ DI('models.Match.STATUS_TEXT')[status] }}
-      </span>
+    <a href="{{ url('/match/{0}', false, [mdoc._id]) }}" class="match-status--text {{ status }}">
+      {{ DI('models.Match.STATUS_TEXT')[status] }}
     </a>
   </td>
   <td class="col--at">
