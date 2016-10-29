@@ -1,7 +1,5 @@
 import 'source-map-support/register';
 import 'app-module-path/register';
-import chalk from 'chalk';
-import fs from 'fs-promise';
 import FrameworkEntry from 'dg-framework';
 
 import path from 'path';
