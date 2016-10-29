@@ -18,7 +18,7 @@
     </tr>
   </thead>
   <tbody>
-  {% for sdoc in sdocs %}
+  {%- for sdoc in sdocs %}
     <tr>
       <td class="col--status submission-status--border {{ sdoc.status }}">
         <span class="icon submission-status--icon {{ sdoc.status }}"></span>
@@ -31,11 +31,11 @@
         #{{ sdoc.version }}:
         <a href="{{ url('/submission/user/{0}', false, [sdoc.user._id]) }}">{{ sdoc.user.profile.displayName }}</a>
       </td>
-      {% set match_status = sdoc.matches | groupby('status') %}
+      {%- set match_status = sdoc.matches | groupby('status') -%}
       <td class="col--wins">{{ match_status.u1win | length | default(0) }}</td>
       <td class="col--loses">{{ match_status.u2win | length | default(0) }}</td>
       <td class="col--draws">{{ match_status.draw | length | default(0) }}</td>
     </tr>
-  {% endfor %}
+  {%- endfor %}
   </tbody>
 </table>

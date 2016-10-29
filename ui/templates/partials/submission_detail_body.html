@@ -8,11 +8,11 @@
       </span>
     </h1>
   </div>
-{% if sdoc.text %}
+{%- if sdoc.text %}
   <div class="section__body typo">
     <pre>{{ sdoc.text }}</pre>
   </div>
-{% endif %}
+{%- endif %}
   <div data-hide-when="no_match"{% if mdocs.length == 0 %} style="display:none"{% endif %}>
     <div class="section__body">
       <div class="supplementary">Showing matches related to this submission.</div>
@@ -36,9 +36,9 @@
           </tr>
         </thead>
         <tbody id="match_row_container">
-        {% for mdoc in mdocs %}
-          {% include "partials/submission_detail_match_row.html" %}
-        {% endfor %}
+        {%- for mdoc in mdocs %}
+          {%- include "partials/submission_detail_match_row.html" -%}
+        {%- endfor %}
         </tbody>
       </table>
       {{ paginator.render(page, pages, url('/submission/{0}/{page}', false, [sdoc._id])) }}

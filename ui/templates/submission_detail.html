@@ -1,7 +1,7 @@
 {% extends "layout/submission_base.html" %}
 {% block submission_content %}
-  {% include "partials/submission_detail_body.html" %}
-{% if sdoc.user.equals(req.credential._id) or req.credential.hasPermission(permissions.VIEW_ANY_SUBMISSION_CODE) %}
+  {%- include "partials/submission_detail_body.html" -%}
+{%- if sdoc.user.equals(req.credential._id) or req.credential.hasPermission(permissions.VIEW_ANY_SUBMISSION_CODE) %}
   <div class="section">
     <div class="section__header">
       <h1 class="section__title">Source Code</h1>
@@ -10,14 +10,14 @@
       <pre><code class="cpp">{{ sdoc.code }}</code></pre>
     </div>
   </div>
-{% endif %}
+{%- endif %}
 {% endblock %}
 {% block submission_sidebar %}
   <div class="side section">
     <div class="section__header">
       <h1 class="section__title">Submission Info</h1>
     </div>
-  {% if req.credential.hasPermission(permissions.REJUDGE_SUBMISSION) %}
+  {%- if req.credential.hasPermission(permissions.REJUDGE_SUBMISSION) %}
     <ol class="menu">
       <li class="menu__item">
         <form method="POST" action="{{ url('/submission/{0}/rejudge', false, [sdoc._id]) }}">
@@ -29,7 +29,7 @@
         </form>
       </li>
     </ol>
-  {% endif %}
+  {%- endif %}
     <div class="section__body typo">
       <dl class="large horizontal">
         <dt>Status</dt>
@@ -45,12 +45,12 @@
             {{ sdoc.user.profile.displayName }}
           </a>
         </dd>
-      {% if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
+      {%- if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
         <dt>Std Id</dt>
         <dd>{{ sdoc.user.profile.studentId }}</dd>
         <dt>Real Name</dt>
         <dd>{{ sdoc.user.profile.realName }}</dd>
-      {% endif %}
+      {%- endif %}
         <dt>Submit At</dt>
         <dd>{{ sdoc.createdAt|datetime }}</dd>
       </dl>

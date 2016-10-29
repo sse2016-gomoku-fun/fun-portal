@@ -102,6 +102,9 @@ export default class Handler {
     res.render('match_detail', {
       page_title: 'Match Detail',
       mdoc,
+      context: {
+        id: mdoc._id.toString(),
+      },
     });
   }
 

@@ -4,17 +4,17 @@
   <div class="section__header">
     <h1 class="section__title">My Submissions</h1>
   </div>
-{% if sdocs|length === 0 %}
+{%- if sdocs|length === 0 %}
   <div class="section__body typo">
     <blockquote class="note">
       <p>You haven't submitted any code. <a href="{{ url('/submission/create') }}">Click here</a> to submit your code!</p>
     </blockquote>
   </div>
-{% else %}
+{%- else %}
   <div class="section__body no-padding">
-    {% include "partials/submissions_table.html" %}
+    {%- include "partials/submissions_table.html" -%}
     {{ paginator.render(page, pages, url('/submission/my/{page}')) }}
   </div>
-{% endif %}
+{%- endif %}
 </div>
 {% endblock %}

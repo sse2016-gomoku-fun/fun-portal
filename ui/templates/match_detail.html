@@ -1,6 +1,5 @@
 {% extends "layout/basic.html" %}
 {% block content %}
-<script>var Context = {{ {'id': mdoc._id.toString()}|json|safe }}</script>
 <div class="row" data-sticky-parent>
   <div class="medium-9 columns">
     <div class="section">
@@ -30,9 +29,9 @@
             </tr>
           </thead>
           <tbody id="round_row_container">
-          {% for rdoc in mdoc.rounds %}
-            {% include "partials/match_detail_round_row.html" %}
-          {% endfor %}
+          {%- for rdoc in mdoc.rounds %}
+            {%- include "partials/match_detail_round_row.html" -%}
+          {%- endfor %}
           </tbody>
         </table>
       </div>
@@ -44,7 +43,7 @@
         <h1 class="section__title">Match Info</h2>
       </div>
       <div class="section__body typo">
-        {% include "partials/match_detail_match_status.html" %}
+        {%- include "partials/match_detail_match_status.html" -%}
         <h2 class="section__title">Challenger</h2>
         <dl class="large horizontal">
           <dt>By</dt>
@@ -59,12 +58,12 @@
               #{{ mdoc.u1Submission.version }}
             </a>
           </dd>
-        {% if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
+        {%- if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
           <dt>Std Id</dt>
           <dd>{{ mdoc.u1.profile.studentId }}</dd>
           <dt>Real Name</dt>
           <dd>{{ mdoc.u1.profile.realName }}</dd>
-        {% endif %}
+        {%- endif %}
           <dt>Submit At</dt>
           <dd>{{ mdoc.u1Submission.createdAt|datetime }}</dd>
         </dl>
@@ -82,12 +81,12 @@
               #{{ mdoc.u2Submission.version }}
             </a>
           </dd>
-        {% if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
+        {%- if req.credential.hasPermission(permissions.VIEW_ANY_PROFILE) %}
           <dt>Std Id</dt>
           <dd>{{ mdoc.u2.profile.studentId }}</dd>
           <dt>Real Name</dt>
           <dd>{{ mdoc.u2.profile.realName }}</dd>
-        {% endif %}
+        {%- endif %}
           <dt>Submit At</dt>
           <dd>{{ mdoc.u2Submission.createdAt|datetime }}</dd>
         </dl>
