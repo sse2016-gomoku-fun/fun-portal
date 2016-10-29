@@ -21,6 +21,7 @@ globals:
   Context: true
   $: true
   DI: true
+  application: true
 rules:
   babel/object-shorthand: 1
   no-cond-assign: 1

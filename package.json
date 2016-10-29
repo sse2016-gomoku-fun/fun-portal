@@ -6,6 +6,7 @@
   "license": "AGPL-1.0",
   "scripts": {
     "start": "node .dist/server.js",
+    "cli": "node .dist/cli.js",
     "build:server": "gulp clean:server && gulp server",
     "build:ui:dev": "gulp fe:iconfont && webpack --progress --colors --display-error-details --bail",
     "build:ui": "npm run build:ui:dev -- --optimize-minimize",
@@ -62,7 +63,8 @@
     "timeago.js": "^2.0.2",
     "uuid": "^2.0.3",
     "validator": "^6.0.0",
-    "winston": "^2.2.0"
+    "winston": "^2.2.0",
+    "yargs": "^6.3.0"
   },
   "devDependencies": {
     "autoprefixer": "^6.5.0",
