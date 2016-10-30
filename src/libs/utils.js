@@ -1,10 +1,17 @@
 import _ from 'lodash';
-
+import uuid from 'uuid';
 import auth from 'basic-auth';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
 
 const utils = {};
+
+utils.profile = (name) => {
+  const token = uuid.v4();
+  const func = () => DI.logger.profile(`${name} [${token}]`);
+  func();
+  return func;
+};
 
 utils.substitute = (str, obj) => {
   return str.replace(/\{([^{}]+)\}/g, (match, key) => {

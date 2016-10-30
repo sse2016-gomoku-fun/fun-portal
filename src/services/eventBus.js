@@ -1,4 +1,5 @@
 import { EventEmitter2 } from 'eventemitter2';
+import utils from 'libs/utils';
 
 export default () => {
 
@@ -8,6 +9,12 @@ export default () => {
     newListener: false,
     maxListeners: 0,
   });
+
+  eventBus.emitAsyncWithProfiling = async (name, ...args) => {
+    const endProfile = utils.profile(`eventBus.emit(${name})`);
+    eventBus.emitAsync(name, ...args);
+    endProfile();
+  };
 
   /*
   eventBus.on('match.new', (mdoc) => DI.logger.info('match.new %s', mdoc._id));

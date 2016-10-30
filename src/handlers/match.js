@@ -110,7 +110,7 @@ export default class Handler {
 
   @socket.namespace('/match_detail')
   async socketMatchDetailConnect(socket, query, nsp) {
-    DI.eventBus.on(`match.statusChanged::${socket.id}`, mdoc => {
+    /*DI.eventBus.on(`match.statusChanged::${socket.id}`, mdoc => {
       if (!mdoc._id.equals(query.id)) {
         return;
       }
@@ -129,7 +129,7 @@ export default class Handler {
     socket.on('disconnect', () => {
       DI.eventBus.removeAllListeners(`match.statusChanged::${socket.id}`);
       DI.eventBus.removeAllListeners(`match.round.updated::${socket.id}`);
-    });
+    });*/
   }
 
   @web.get('/:id/round/:rid')

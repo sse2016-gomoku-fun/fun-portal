@@ -2,7 +2,7 @@ import _ from 'lodash';
 import fsp from 'fs-promise';
 import mongoose from 'mongoose';
 import async from 'async';
-import uuid from 'uuid';
+import utils from 'libs/utils';
 import objectId from 'libs/objectId';
 import errors from 'libs/errors';
 
@@ -73,48 +73,38 @@ export default () => {
   });
 
   MatchSchema.post('save', function () {
-    if (this.__lastIsNew) {
-      DI.eventBus.emit('match.new::**', this);
-    }
-    this.__lastModifiedPaths.forEach(path => {
-      let m;
-      if (path === 'status') {
-        // mdoc
-        DI.eventBus.emit('match.statusChanged::**', this);
-      }
-      if (m = path.match(/^rounds\.(\d+)$/)) {
-        // mdoc, rdoc
-        DI.eventBus.emit('match.round.updated::**', this, this.rounds[m[1]]);
-      }
-      if (m = path.match(/^rounds\.(\d+)\.status$/)) {
-        // mdoc, rdoc
-        DI.eventBus.emit('match.round.statusChanged::**', this, this.rounds[m[1]]);
-      }
-    });
+    Promise.all([
+      async () => {
+        if (this.__lastIsNew) {
+          await DI.eventBus.emitAsyncWithProfiling('match:created::**', this._id);
+        }
+      },
+      ...this.__lastModifiedPaths.map(async (path) => {
+        let m;
+        if (path === 'status') {
+          await DI.eventBus.emitAsyncWithProfiling('match.status:updated::**', this._id);
+        } else if (m = path.match(/^rounds\.(\d+)$/)) {
+          const rdoc = this.rounds[m[1]];
+          await DI.eventBus.emitAsyncWithProfiling('match.rounds:updated::**', this._id, rdoc._id);
+        } else if (m = path.match(/^rounds\.(\d+)\.status$/)) {
+          const rdoc = this.rounds[m[1]];
+          await DI.eventBus.emitAsyncWithProfiling('match.rounds.status:updated::**', this._id, rdoc._id);
+        }
+      }),
+    ]);
   });
 
-  async function updateSingleMatchStatus(matchId) {
-    try {
-      const match = await Match.getMatchObjectByIdAsync(matchId);
-      match.updateMatchStatus();
-      await match.save();
-    } catch (ignored) {
-      // ignore errors
-    }
-  }
-
   /**
-   * Single worker queue to deal with match status updates to avoid race conditions
+   * Update the match status one by one when round status is updated
    */
-  const matchStatusUpdateQueue = async.queue((matchId, callback) => {
-    updateSingleMatchStatus(matchId).then(() => callback());
+  const updateStatusQueue = async.queue((mdocid, callback) => {
+    Match.updateMatchStatusAsync(mdocid)
+      .then(callback)
+      .catch(() => callback());
   }, 1);
 
-  /**
-   * Update the match status when round status is updated
-   */
-  DI.eventBus.on('match.round.statusChanged', mdoc => {
-    matchStatusUpdateQueue.push(mdoc._id);
+  DI.eventBus.on('match.rounds.status:updated', mdocid => {
+    updateStatusQueue.push(mdocid);
   });
 
   /**
@@ -211,8 +201,7 @@ export default () => {
       return [];
     }
 
-    const token = uuid.v4();
-    DI.logger.profile(`Match.addMatchesForSubmissionAsync-${token}`);
+    const endProfile = utils.profile('Match.addMatchesForSubmissionAsync');
 
     const mdocs = [];
     await Promise.all(s2u2docs.map(async s2u2doc => {
@@ -238,7 +227,7 @@ export default () => {
       mdocs.push(mdoc);
     }));
 
-    DI.logger.profile(`Match.addMatchesForSubmissionAsync-${token}`);
+    endProfile();
 
     return mdocs;
   };
@@ -272,7 +261,7 @@ export default () => {
   /**
    * Update match status according to round status
    */
-  MatchSchema.methods.updateMatchStatus = function () {
+  MatchSchema.methods.updateStatus = function () {
     const statusStat = {
       [Match.STATUS_PENDING]: 0,
       [Match.STATUS_RUNNING]: 0,
@@ -304,6 +293,12 @@ export default () => {
     } else {
       this.status = Match.STATUS_DRAW;
     }
+  };
+
+  MatchSchema.statics.updateMatchStatusAsync = async function (mdocid) {
+    const mdoc = await Match.getMatchObjectByIdAsync(mdocid);
+    mdoc.updateStatus();
+    await mdoc.save();
   };
 
   /**
@@ -383,7 +378,7 @@ export default () => {
     const cursor = Match.find().sort({ _id: 1 }).cursor();
     for (let mdoc = await cursor.next(); mdoc !== null; mdoc = await cursor.next()) {
       ret.all++;
-      mdoc.updateMatchStatus();
+      mdoc.updateStatus();
       if (mdoc.isModified('status')) {
         ret.updated++;
         await mdoc.save();

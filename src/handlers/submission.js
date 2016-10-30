@@ -5,6 +5,7 @@ import utils from 'libs/utils';
 import sanitizers from 'libs/sanitizers';
 import errors from 'libs/errors';
 import permissions from 'libs/permissions';
+import socket from 'libs/socket';
 
 const binUpload = multer({
   storage: multer.diskStorage({}),
@@ -20,6 +21,7 @@ const binUpload = multer({
 
 const SUBMISSIONS_PER_PAGE = 50;
 
+@socket.enable()
 @web.controller('/submission')
 export default class Handler {
 
@@ -236,7 +238,71 @@ export default class Handler {
       pages,
       page: req.data.page,
       getRelativeStatus: (status, mdoc) => DI.models.Match.getRelativeStatus(status, mdoc.u1.equals(sdoc.user)),
+      context: {
+        id: sdoc._id,
+        page: req.data.page,
+      },
     });
+  }
+
+  @socket.namespace('/submission_detail')
+  async socketSubmissionDetailConnect(socket, query, nsp) {
+    /*if (query.page != 1) {
+      return;
+    }
+
+    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(query.id);
+    socket.emit('update_submission', {
+      html: DI.webTemplate.render('partials/submission_detail_body.html', { sdoc }),
+    });
+
+    DI.eventBus.on(`submission.statusChanged::${socket.id}`, sdoc => {
+      if (!sdoc._id.equals(query.id)) {
+        return;
+      }
+      socket.emit('update_submission', {
+        html: DI.webTemplate.render('partials/submission_detail_body.html', { sdoc }),
+      });
+    });
+
+    DI.eventBus.on(`match.new::${socket.id}`, mdoc => {
+      if (!mdoc.u1Submission.equals(query.id) && !mdoc.u2Submission.equals(query.id)) {
+        return;
+      }
+      socket.emit('update_submission_match', {
+        html: DI.webTemplate.render('partials/submission_detail_match_row.html', { sdoc }),
+      });
+      socket.emit('info', 'match.new');
+    });
+
+    DI.eventBus.on(`match.round.updated::${socket.id}`, mdoc => {
+      if (!mdoc.u1Submission.equals(query.id) && !mdoc.u2Submission.equals(query.id)) {
+        return;
+      }
+      socket.emit('info', 'match.round.updated');
+    });
+    /*
+    DI.eventBus.on(`match.statusChanged::${socket.id}`, mdoc => {
+      if (!mdoc._id.equals(query.id)) {
+        return;
+      }
+      socket.emit('update_match_status', {
+        html: DI.webTemplate.render('partials/match_detail_match_status.html', { mdoc }),
+      });
+    });
+    DI.eventBus.on(`match.round.updated::${socket.id}`, (mdoc, rdoc) => {
+      if (!mdoc._id.equals(query.id)) {
+        return;
+      }
+      socket.emit('update_round_row', {
+        html: DI.webTemplate.render('partials/match_detail_round_row.html', { mdoc, rdoc }),
+      });
+    });*/
+    /*socket.on('disconnect', () => {
+      DI.eventBus.removeAllListeners(`submission.statusChanged::${socket.id}`);
+      DI.eventBus.removeAllListeners(`match.new::${socket.id}`);
+      DI.eventBus.removeAllListeners(`match.round.updated::${socket.id}`);
+    });*/
   }
 
   @web.post('/:id/rejudge')
