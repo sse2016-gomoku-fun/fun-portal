@@ -108,28 +108,41 @@ export default class Handler {
     });
   }
 
+  static async socketRenderMatchStatus(socket, timestamp, mdocid) {
+    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
+    socket.emit('update_match_status', {
+      html: DI.webTemplate.render('partials/match_detail_match_status.html', { mdoc }),
+      timestamp,
+    });
+  }
+
+  static async socketRenderRoundRow(socket, timestamp, mdocid, rdocid) {
+    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
+    const rdoc = mdoc.rounds ? mdoc.rounds.find(rdoc => rdoc._id.equals(rdocid)) : undefined;
+    if (!rdoc) {
+      return;
+    }
+    socket.emit('update_round_row', {
+      html: DI.webTemplate.render('partials/match_detail_round_row.html', { mdoc, rdoc }),
+      rdocid: rdoc._id.toString(),
+      timestamp,
+    });
+  }
+
   @socket.namespace('/match_detail')
   async socketMatchDetailConnect(socket, query, nsp) {
-    /*DI.eventBus.on(`match.statusChanged::${socket.id}`, mdoc => {
+    socket.listenBus('match.status:updated', mdoc => {
       if (!mdoc._id.equals(query.id)) {
         return;
       }
-      socket.emit('update_match_status', {
-        html: DI.webTemplate.render('partials/match_detail_match_status.html', { mdoc }),
-      });
+      Handler.socketRenderMatchStatus(socket, Date.now(), mdoc._id);
     });
-    DI.eventBus.on(`match.round.updated::${socket.id}`, (mdoc, rdoc) => {
+    socket.listenBus('match.rounds:updated', (mdoc, rdoc) => {
       if (!mdoc._id.equals(query.id)) {
         return;
       }
-      socket.emit('update_round_row', {
-        html: DI.webTemplate.render('partials/match_detail_round_row.html', { mdoc, rdoc }),
-      });
+      Handler.socketRenderRoundRow(socket, Date.now(), mdoc._id, rdoc._id);
     });
-    socket.on('disconnect', () => {
-      DI.eventBus.removeAllListeners(`match.statusChanged::${socket.id}`);
-      DI.eventBus.removeAllListeners(`match.round.updated::${socket.id}`);
-    });*/
   }
 
   @web.get('/:id/round/:rid')

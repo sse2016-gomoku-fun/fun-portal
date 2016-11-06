@@ -73,22 +73,23 @@ export default () => {
   });
 
   MatchSchema.post('save', function () {
+    const mdoc = this.toObject();
     Promise.all([
       async () => {
         if (this.__lastIsNew) {
-          await DI.eventBus.emitAsyncWithProfiling('match:created::**', this._id);
+          await DI.eventBus.emitAsyncWithProfiling('match:created::**', mdoc);
         }
       },
       ...this.__lastModifiedPaths.map(async (path) => {
         let m;
         if (path === 'status') {
-          await DI.eventBus.emitAsyncWithProfiling('match.status:updated::**', this._id);
+          await DI.eventBus.emitAsyncWithProfiling('match.status:updated::**', mdoc);
         } else if (m = path.match(/^rounds\.(\d+)$/)) {
-          const rdoc = this.rounds[m[1]];
-          await DI.eventBus.emitAsyncWithProfiling('match.rounds:updated::**', this._id, rdoc._id);
+          const rdoc = mdoc.rounds[m[1]];
+          await DI.eventBus.emitAsyncWithProfiling('match.rounds:updated::**', mdoc, rdoc);
         } else if (m = path.match(/^rounds\.(\d+)\.status$/)) {
-          const rdoc = this.rounds[m[1]];
-          await DI.eventBus.emitAsyncWithProfiling('match.rounds.status:updated::**', this._id, rdoc._id);
+          const rdoc = mdoc.rounds[m[1]];
+          await DI.eventBus.emitAsyncWithProfiling('match.rounds.status:updated::**', mdoc, rdoc);
         }
       }),
     ]);
@@ -103,8 +104,8 @@ export default () => {
       .catch(() => callback());
   }, 1);
 
-  DI.eventBus.on('match.rounds.status:updated', mdocid => {
-    updateStatusQueue.push(mdocid);
+  DI.eventBus.on('match.rounds.status:updated', mdoc => {
+    updateStatusQueue.push(mdoc._id);
   });
 
   /**

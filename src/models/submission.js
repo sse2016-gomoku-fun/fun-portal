@@ -49,19 +49,20 @@ export default () => {
   });
 
   SubmissionSchema.post('save', function () {
+    const sdoc = this.toObject();
     Promise.all([
       async () => {
         if (this.__lastIsNew) {
-          await DI.eventBus.emitAsyncWithProfiling('submission:created::**', this._id);
+          await DI.eventBus.emitAsyncWithProfiling('submission:created::**', sdoc);
         }
       },
       ...this.__lastModifiedPaths.map(async (path) => {
         let m;
         if (path === 'status') {
-          await DI.eventBus.emitAsyncWithProfiling('submission.status:updated::**', this._id);
+          await DI.eventBus.emitAsyncWithProfiling('submission.status:updated::**', sdoc);
         } else if (m = path.match(/^matches\.(\d+)\.status$/)) {
-          const smdoc = this.matches[m[1]];
-          await DI.eventBus.emitAsyncWithProfiling('submission.matches.status:updated::**', this._id, smdoc._id);
+          const smdoc = sdoc.matches[m[1]];
+          await DI.eventBus.emitAsyncWithProfiling('submission.matches.status:updated::**', sdoc, smdoc);
         }
       }),
     ]);
@@ -76,16 +77,16 @@ export default () => {
       .catch(() => callback());
   }, 1);
 
-  DI.eventBus.on('submission.matches.status:updated', sdocid => {
-    updateStatusQueue.push(sdocid);
+  DI.eventBus.on('submission.matches.status:updated', sdoc => {
+    updateStatusQueue.push(sdoc._id);
   });
 
   /**
    * Update corresponding smdoc status when a match status is updated
    */
-  DI.eventBus.on('match.status:updated', async mdocid => {
+  DI.eventBus.on('match.status:updated', async mdoc => {
     try {
-      await Submission.updateSubmissionMatchAsync(mdocid);
+      await Submission.updateSubmissionMatchAsync(mdoc._id);
     } catch (err) {
       DI.logger.error(err);
     }
