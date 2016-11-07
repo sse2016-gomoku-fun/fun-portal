@@ -73,7 +73,7 @@ export default class Handler {
     try {
       await fsp.remove(req.file.path);
     } catch (err) {
-      DI.logger.error(err);
+      DI.logger.error(err.stack);
     }
     const mdoc = await DI.models.Match.judgeCompleteRoundAsync(
       req.data.mid,
@@ -108,40 +108,51 @@ export default class Handler {
     });
   }
 
-  static async socketRenderMatchStatus(socket, timestamp, mdocid) {
-    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
-    socket.emit('update_match_status', {
-      html: DI.webTemplate.render('partials/match_detail_match_status.html', { mdoc }),
-      timestamp,
-    });
+  static async socketHandleMatchStatusUpdate(socket, mdocid) {
+    try {
+      const timestamp = Date.now();
+      const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
+      socket.emit('update_match_status', {
+        html: DI.webTemplate.render('partials/match_detail_match_status.html', { mdoc }),
+        tsKey: 'mdoc',
+        tsValue: timestamp,
+      });
+    } catch (err) {
+      DI.logger.error(err.stack);
+    }
   }
 
-  static async socketRenderRoundRow(socket, timestamp, mdocid, rdocid) {
-    const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
-    const rdoc = mdoc.rounds ? mdoc.rounds.find(rdoc => rdoc._id.equals(rdocid)) : undefined;
-    if (!rdoc) {
-      return;
+  static async socketHandleMatchRoundsUpdate(socket, mdocid, rdocid) {
+    try {
+      const timestamp = Date.now();
+      const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
+      const rdoc = mdoc.rounds ? mdoc.rounds.find(rdoc => rdoc._id.equals(rdocid)) : undefined;
+      if (!rdoc) {
+        return;
+      }
+      socket.emit('update_round_row', {
+        html: DI.webTemplate.render('partials/match_detail_round_row.html', { mdoc, rdoc }),
+        tsKey: `rdoc_${rdoc._id}`,
+        tsValue: timestamp,
+      });
+    } catch (err) {
+      DI.logger.error(err.stack);
     }
-    socket.emit('update_round_row', {
-      html: DI.webTemplate.render('partials/match_detail_round_row.html', { mdoc, rdoc }),
-      rdocid: rdoc._id.toString(),
-      timestamp,
-    });
   }
 
   @socket.namespace('/match_detail')
   async socketMatchDetailConnect(socket, query, nsp) {
-    socket.listenBus('match.status:updated', mdoc => {
+    socket.listenBus('match.status:updated', async mdoc => {
       if (!mdoc._id.equals(query.id)) {
         return;
       }
-      Handler.socketRenderMatchStatus(socket, Date.now(), mdoc._id);
+      await Handler.socketHandleMatchStatusUpdate(socket, mdoc._id);
     });
-    socket.listenBus('match.rounds:updated', (mdoc, rdoc) => {
+    socket.listenBus('match.rounds:updated', async (mdoc, rdoc) => {
       if (!mdoc._id.equals(query.id)) {
         return;
       }
-      Handler.socketRenderRoundRow(socket, Date.now(), mdoc._id, rdoc._id);
+      await Handler.socketHandleMatchRoundsUpdate(socket, mdoc._id, rdoc._id);
     });
   }
 

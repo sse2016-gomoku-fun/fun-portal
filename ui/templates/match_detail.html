@@ -43,7 +43,18 @@
         <h1 class="section__title">Match Info</h2>
       </div>
       <div class="section__body typo">
-        {%- include "partials/match_detail_match_status.html" -%}
+        <dl class="large horizontal">
+          <dt>Status</dt>
+          {%- include "partials/match_detail_match_status.html" -%}
+          <dt>At</dt>
+          <dd>
+            {{ mdoc.createdAt|datetime }}
+          </dd>
+          <dt>Rounds</dt>
+          <dd>
+            {{ mdoc.rounds.length }}
+          </dd>
+        </dl>
         <h2 class="section__title">Challenger</h2>
         <dl class="large horizontal">
           <dt>By</dt>

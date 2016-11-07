@@ -84,7 +84,7 @@ export default class Handler {
       try {
         await fsp.remove(req.file.path);
       } catch (err) {
-        DI.logger.error(err);
+        DI.logger.error(err.stack);
       }
     }
     const sdoc = await DI.models.Submission.judgeCompleteCompileAsync(
@@ -208,11 +208,11 @@ export default class Handler {
   @web.middleware(utils.checkCompleteProfile())
   @web.middleware(utils.checkPermission(permissions.CREATE_SUBMISSION))
   async postSubmissionCreateAction(req, res) {
-    await DI.models.Submission.createSubmissionAsync(
+    const sdoc = await DI.models.Submission.createSubmissionAsync(
       req.credential._id,
       req.data.code
     );
-    res.redirect(utils.url('/submission'));
+    res.redirect(utils.url('/submission/{0}', false, [sdoc._id]));
   }
 
   @web.get('/:id/:page?')
@@ -245,64 +245,67 @@ export default class Handler {
     });
   }
 
+  static async socketHandleSubmissionStatusUpdate(socket, sdocid) {
+    try {
+      const timestamp = Date.now();
+      const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(sdocid);
+      await sdoc.populate('user').execPopulate();
+      socket.emit('update_body', {
+        html: DI.webTemplate.render('partials/submission_detail_body.html', { sdoc }),
+        tsKey: 'sdoc',
+        tsValue: timestamp,
+      });
+      socket.emit('update_status', {
+        html: DI.webTemplate.render('partials/submission_detail_status.html', { sdoc }),
+        tsKey: 'sdoc',
+        tsValue: timestamp,
+      });
+    } catch (err) {
+      DI.logger.error(err.stack);
+    }
+  }
+
+  static async socketHandleMatchUpdate(socket, mdocid, sdocid) {
+    try {
+      const timestamp = Date.now();
+      const mdoc = await DI.models.Match.getMatchObjectByIdAsync(mdocid);
+      await mdoc.populate('u1 u2 u1Submission u2Submission').execPopulate();
+      const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(sdocid);
+      socket.emit('update_match_row', {
+        html: DI.webTemplate.render('partials/submission_detail_match_row.html', {
+          mdoc,
+          sdoc,
+          getRelativeStatus: (status, mdoc) => DI.models.Match.getRelativeStatus(status, mdoc.u1.equals(sdoc.user)),
+        }),
+        tsKey: `mdoc_${mdocid}`,
+        tsValue: timestamp,
+      });
+    } catch (err) {
+      DI.logger.error(err.stack);
+    }
+  }
+
   @socket.namespace('/submission_detail')
   async socketSubmissionDetailConnect(socket, query, nsp) {
-    /*if (query.page != 1) {
+    if (query.page != 1) {
       return;
     }
-
-    const sdoc = await DI.models.Submission.getSubmissionObjectByIdAsync(query.id);
-    socket.emit('update_submission', {
-      html: DI.webTemplate.render('partials/submission_detail_body.html', { sdoc }),
-    });
-
-    DI.eventBus.on(`submission.statusChanged::${socket.id}`, sdoc => {
+    await Handler.socketHandleSubmissionStatusUpdate(socket, query.id);
+    socket.listenBus('submission.status:updated', async sdoc => {
       if (!sdoc._id.equals(query.id)) {
         return;
       }
-      socket.emit('update_submission', {
-        html: DI.webTemplate.render('partials/submission_detail_body.html', { sdoc }),
-      });
+      await Handler.socketHandleSubmissionStatusUpdate(socket, sdoc._id);
     });
-
-    DI.eventBus.on(`match.new::${socket.id}`, mdoc => {
+    async function onMatchUpdated (mdoc) {
       if (!mdoc.u1Submission.equals(query.id) && !mdoc.u2Submission.equals(query.id)) {
         return;
       }
-      socket.emit('update_submission_match', {
-        html: DI.webTemplate.render('partials/submission_detail_match_row.html', { sdoc }),
-      });
-      socket.emit('info', 'match.new');
-    });
-
-    DI.eventBus.on(`match.round.updated::${socket.id}`, mdoc => {
-      if (!mdoc.u1Submission.equals(query.id) && !mdoc.u2Submission.equals(query.id)) {
-        return;
-      }
-      socket.emit('info', 'match.round.updated');
-    });
-    /*
-    DI.eventBus.on(`match.statusChanged::${socket.id}`, mdoc => {
-      if (!mdoc._id.equals(query.id)) {
-        return;
-      }
-      socket.emit('update_match_status', {
-        html: DI.webTemplate.render('partials/match_detail_match_status.html', { mdoc }),
-      });
-    });
-    DI.eventBus.on(`match.round.updated::${socket.id}`, (mdoc, rdoc) => {
-      if (!mdoc._id.equals(query.id)) {
-        return;
-      }
-      socket.emit('update_round_row', {
-        html: DI.webTemplate.render('partials/match_detail_round_row.html', { mdoc, rdoc }),
-      });
-    });*/
-    /*socket.on('disconnect', () => {
-      DI.eventBus.removeAllListeners(`submission.statusChanged::${socket.id}`);
-      DI.eventBus.removeAllListeners(`match.new::${socket.id}`);
-      DI.eventBus.removeAllListeners(`match.round.updated::${socket.id}`);
-    });*/
+      await Handler.socketHandleMatchUpdate(socket, mdoc._id, query.id);
+    }
+    socket.listenBus('match:created', onMatchUpdated);
+    socket.listenBus('match.status:updated', onMatchUpdated);
+    socket.listenBus('match.rounds:updated', onMatchUpdated);
   }
 
   @web.post('/:id/rejudge')

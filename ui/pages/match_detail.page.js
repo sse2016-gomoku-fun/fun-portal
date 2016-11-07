@@ -8,6 +8,7 @@ const page = new NamedPage('match_detail', () => {
     update_match_status: {},
     update_round_row: {
       $container: $('#round_row_container'),
+      strategy: 'prepend',
     },
   });
 });

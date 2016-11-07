@@ -1,24 +1,40 @@
 import DiffDOM from 'diff-dom';
 
-const dd = new DiffDOM();
-
 const diff = {
-  applyForId($container, newHtml, newStrategy = 'prepend', idField = 'data-id') {
-    const $new = $(newHtml);
-    const id = $new.attr(idField);
-    const $old = $container.find(`[${idField}="${id}"]`);
+  /**
+   * _options.$container
+   * _options.newHtml
+   * _options.idField   (optional)
+   * _options.strategy  (optional)
+   * _options.ddOpt     (optional)
+   * _options.postApply (optional)
+   */
+  applyForId(_options) {
+    const options = {
+      ddOpt: {},
+      strategy: null,
+      idField: 'data-id',
+      ..._options,
+    };
+    const dd = new DiffDOM(options.ddOpt);
+    const $new = $(options.newHtml);
+    const id = $new.attr(options.idField);
+    const $old = options.$container.find(`[${options.idField}="${id}"]`);
     if ($old.length === 0) {
-      if (newStrategy === 'prepend') {
-        $container.prepend($new);
+      if (options.strategy === 'prepend') {
+        options.$container.prepend($new);
         $new.trigger('vjContentNew');
-      } else if (newStrategy === 'append') {
-        $container.append($new);
+      } else if (options.strategy === 'append') {
+        options.$container.append($new);
         $new.trigger('vjContentNew');
       }
     } else {
       $old.trigger('vjContentRemove');
       dd.apply($old[0], dd.diff($old[0], $new[0]));
       $old.trigger('vjContentNew');
+      if (options.postApply) {
+        options.postApply($old);
+      }
     }
   },
 };

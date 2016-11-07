@@ -75,11 +75,11 @@ export default () => {
   MatchSchema.post('save', function () {
     const mdoc = this.toObject();
     Promise.all([
-      async () => {
+      (async () => {
         if (this.__lastIsNew) {
           await DI.eventBus.emitAsyncWithProfiling('match:created::**', mdoc);
         }
-      },
+      })(),
       ...this.__lastModifiedPaths.map(async (path) => {
         let m;
         if (path === 'status') {

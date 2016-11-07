@@ -16,7 +16,6 @@ function runRelativeTime($container) {
 }
 
 function cancelRelativeTime($container) {
-  console.log('vjContentRemove', $container);
   for (const element of $container.find('span.time[data-timestamp]')) {
     const $element = $(element);
     const timeago = $element.data('timeago');

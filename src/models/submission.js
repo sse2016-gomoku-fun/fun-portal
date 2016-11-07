@@ -51,11 +51,11 @@ export default () => {
   SubmissionSchema.post('save', function () {
     const sdoc = this.toObject();
     Promise.all([
-      async () => {
+      (async () => {
         if (this.__lastIsNew) {
           await DI.eventBus.emitAsyncWithProfiling('submission:created::**', sdoc);
         }
-      },
+      })(),
       ...this.__lastModifiedPaths.map(async (path) => {
         let m;
         if (path === 'status') {
@@ -88,7 +88,7 @@ export default () => {
     try {
       await Submission.updateSubmissionMatchAsync(mdoc._id);
     } catch (err) {
-      DI.logger.error(err);
+      DI.logger.error(err.stack);
     }
   });
 
@@ -234,7 +234,7 @@ export default () => {
   SubmissionSchema.statics._compileForMatchAsync = async function (sdoc) {
     if (sdoc.taskToken) {
       const error = new Error('_compileForMatchAsync: Expect taskToken is undefined');
-      DI.logger.error(error);
+      DI.logger.error(error.stack);
     }
     sdoc.exeBlob = null;
     sdoc.status = Submission.STATUS_PENDING;

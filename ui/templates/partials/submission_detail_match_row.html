@@ -1,4 +1,4 @@
-<tr>
+<tr data-id="{{ mdoc._id }}">
   {%- set status = getRelativeStatus(mdoc.status, mdoc) -%}
   <td class="col--status match-status--border {{ status }}">
     <span class="icon match-status--icon {{ status }}"></span>

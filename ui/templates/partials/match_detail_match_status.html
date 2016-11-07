@@ -1,17 +1,6 @@
-<dl data-id="match_status" class="large horizontal">
-  <dt>Status</dt>
-  <dd>
-    <span class="icon match-status--icon {{ mdoc.status }}"></span>
-    <span class="match-status--text {{ mdoc.status }}">
-      {{ DI('models.Match.STATUS_TEXT')[mdoc.status] }}
-    </span>
-  </dd>
-  <dt>At</dt>
-  <dd>
-    {{ mdoc.createdAt|datetime }}
-  </dd>
-  <dt>Rounds</dt>
-  <dd>
-    {{ mdoc.rounds.length }}
-  </dd>
-</dl>
+<dd data-id="match_status">
+  <span class="icon match-status--icon {{ mdoc.status }}"></span>
+  <span class="match-status--text {{ mdoc.status }}">
+    {{ DI('models.Match.STATUS_TEXT')[mdoc.status] }}
+  </span>
+</dd>

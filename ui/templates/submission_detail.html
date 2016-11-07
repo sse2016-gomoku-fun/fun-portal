@@ -1,6 +1,47 @@
 {% extends "layout/submission_base.html" %}
 {% block submission_content %}
-  {%- include "partials/submission_detail_body.html" -%}
+  <div class="section">
+    {% include "partials/submission_detail_body.html" %}
+    <div data-hide-when="no_match"{% if mdocs.length == 0 %} style="display:none"{% endif %}>
+      <div class="section__body">
+        <div class="supplementary">Showing matches related to this submission.</div>
+      </div>
+      <div class="section__body no-padding">
+        <table class="data-table">
+          <colgroup>
+            <col class="col--status match-status--border">
+            <col class="col--at">
+            <col class="col--challenger">
+            <col class="col--challengee">
+            <col class="col--rounds">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col--status match-status--border">Status</th>
+              <th class="col--at">At</th>
+              <th class="col--challenger">Challenger</th>
+              <th class="col--challengee">Opponent</th>
+              <th class="col--rounds">Round Statistics</th>
+            </tr>
+          </thead>
+          <tbody id="match_row_container">
+          {%- for mdoc in mdocs %}
+            {%- include "partials/submission_detail_match_row.html" -%}
+          {%- endfor %}
+          </tbody>
+        </table>
+        {{ paginator.render(page, pages, url('/submission/{0}/{page}', false, [sdoc._id])) }}
+      </div>
+    </div>
+    <div class="section__body">
+      <div data-hide-when="no_match" class="supplementary"{% if mdocs.length == 0 %} style="display:none"{% endif %}>
+        Note: Win or lose is relative to the submitter.
+      </div>
+      <div data-hide-when="match" class="supplementary"{% if mdocs.length > 0 %} style="display:none"{% endif %}>
+        This submission doesn't have related matches.
+      </div>
+    </div>
+  </div>
 {%- if sdoc.user.equals(req.credential._id) or req.credential.hasPermission(permissions.VIEW_ANY_SUBMISSION_CODE) %}
   <div class="section">
     <div class="section__header">
@@ -33,12 +74,7 @@
     <div class="section__body typo">
       <dl class="large horizontal">
         <dt>Status</dt>
-        <dd>
-          <span class="icon submission-status--icon {{ sdoc.status }}"></span>
-          <span class="submission-status--text {{ sdoc.status }}">
-            {{ DI('models.Submission.STATUS_TEXT')[sdoc.status] }}
-          </span>
-        </dd>
+        {%- include "partials/submission_detail_status.html" -%}
         <dt>Submit By</dt>
         <dd>
           <a href="{{ url('/submission/user/{0}', false, [sdoc.user._id]) }}">
